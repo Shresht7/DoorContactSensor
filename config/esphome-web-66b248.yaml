@@ -53,11 +53,13 @@ binary_sensor:
         - light.turn_on: onboard_blue_led
         - delay: 1s
         - light.turn_off: onboard_blue_led
+        - script.execute: consider_deep_sleep
     on_release: # Triggers when door CLOSES
       then:
         - light.turn_on: onboard_blue_led
         - delay: 100ms
         - light.turn_off: onboard_blue_led
+        - script.execute: consider_deep_sleep
 
 light:
   # === Onboard LED ===
@@ -65,11 +67,34 @@ light:
     id: onboard_blue_led
     pin: GPIO8
 
+switch:
+  # === Prevent Deep Sleep (Debug Switch) ===
+  - platform: template
+    name: "Prevent Deep Sleep"
+    id: prevent_deep_sleep
+    optimistic: true
+
+# -------
+# SCRIPTS
+# -------
+
+script:
+  - id: consider_deep_sleep
+    then:
+      - if:
+          condition:
+            switch.is_off: prevent_deep_sleep
+          then: # Go for deep sleep
+            - deep_sleep.enter: deep_sleep_control
+          else: # No Go
+            - logger.log: "Deep sleep prevented by switch"
+
 # ----------
 # DEEP SLEEP
 # ----------
 
 deep_sleep:
+  id: deep_sleep_control
   run_duration: 10s
   wakeup_pin:
     number: GPIO4
