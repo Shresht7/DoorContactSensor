@@ -29,6 +29,7 @@ ota:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
+  fast_connect: true
   manual_ip:
     static_ip: 192.168.0.240
     gateway: 192.168.0.1
@@ -59,7 +60,7 @@ light:
 # ----------
 
 deep_sleep:
-  run_duration: 60s
+  run_duration: 10s
   wakeup_pin:
     number: GPIO4
     mode: INPUT_PULLUP
