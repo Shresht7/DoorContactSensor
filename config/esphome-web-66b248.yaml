@@ -48,6 +48,16 @@ binary_sensor:
       number: GPIO4
       mode: INPUT_PULLUP
       allow_other_uses: true
+    on_press: # Triggers when door OPENS
+      then:
+        - light.turn_on: onboard_blue_led
+        - delay: 1s
+        - light.turn_off: onboard_blue_led
+    on_release: # Triggers when door CLOSES
+      then:
+        - light.turn_on: onboard_blue_led
+        - delay: 100ms
+        - light.turn_off: onboard_blue_led
 
 light:
   # === Onboard LED ===
