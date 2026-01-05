@@ -2,6 +2,13 @@
 
 A ESPHome powered door-contact sensor running on a ESP32C3 Super Mini.
 
+## Hardware
+
+- ESP32C3 Super Mini
+- Magnetic Reed Sensor Module
+- TP4056 Battery Charging Module
+- Lithium Battery
+
 ## 📕 References
 
 - https://esphome.io/
