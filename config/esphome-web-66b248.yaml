@@ -17,6 +17,12 @@ logger:
 
 # Enable Home Assistant API
 api:
+  on_client_connected:
+    then:
+      - deep_sleep.prevent: deep_sleep_control
+  on_client_disconnected:
+    then:
+      - deep_sleep.allow: deep_sleep_control
 
 # Allow Over-The-Air updates
 ota:
@@ -48,6 +54,8 @@ binary_sensor:
       number: GPIO4
       mode: INPUT_PULLUP
       allow_other_uses: true
+    filters:
+      - delayed_on_off: 50ms
     on_press: # Triggers when door OPENS
       then:
         - light.turn_on: onboard_blue_led
@@ -84,9 +92,14 @@ script:
       - if:
           condition:
             switch.is_off: prevent_deep_sleep
-          then: # Go for deep sleep
+          then:
+            - wait_until:
+                condition:
+                  api.connected:
+                timeout: 15s
+            - delay: 500ms  # small buffer so the published state actually flushes
             - deep_sleep.enter: deep_sleep_control
-          else: # No Go
+          else:
             - logger.log: "Deep sleep prevented by switch"
 
 # ----------
@@ -95,7 +108,7 @@ script:
 
 deep_sleep:
   id: deep_sleep_control
-  run_duration: 10s
+  run_duration: 30s
   wakeup_pin:
     number: GPIO4
     mode: INPUT_PULLUP
