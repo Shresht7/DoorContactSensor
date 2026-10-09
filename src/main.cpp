@@ -64,7 +64,7 @@ void setup()
     // Determine the wakeup cause
     esp_sleep_wakeup_cause_t wakeReason = esp_sleep_get_wakeup_cause();
     Serial.println("Wake reason: " + String(wakeReason));
-    if (wakeReason == ESP_SLEEP_WAKEUP_EXT0)
+    if (wakeReason == ESP_SLEEP_WAKEUP_GPIO)
     {
         // Woke up from external wakeup (door sensor)
         Serial.println("Woke up from external wakeup (door sensor)");
