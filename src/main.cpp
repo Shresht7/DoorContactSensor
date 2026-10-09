@@ -34,7 +34,6 @@ void goToSleep(bool currentlyOpen)
     Serial.println("Going to sleep...");
     // Wake when the pin goes to the opposite state of the current door state,
     // so any change (open->close or close->open) trigger an external wake.
-    int wakePinState = currentlyOpen ? LOW : HIGH;
     esp_deepsleep_gpio_wake_up_mode_t wakeMode = currentlyOpen
                                                      ? ESP_GPIO_WAKEUP_GPIO_LOW
                                                      : ESP_GPIO_WAKEUP_GPIO_HIGH;
