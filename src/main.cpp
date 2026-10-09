@@ -56,7 +56,7 @@ bool connectNetwork()
     start = millis();
     while (!mqttClient.connected() && (millis() - start) < 10000)
     {
-        mqttClient.connect(MQTT_CLIENT_ID);
+        mqttClient.connect(MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD);
         delay(100);
     }
 
