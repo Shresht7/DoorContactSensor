@@ -27,10 +27,6 @@
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
 
-#ifdef STAY_AWAKE
-bool connectedToNetwork = false;
-#endif
-
 /// @brief Connects to the WiFi network and MQTT broker
 /// @return True if both WiFi and MQTT connections are successful, false otherwise
 bool connectNetwork()
@@ -40,6 +36,7 @@ bool connectNetwork()
     if (mqttClient.connected())
         return true;
 
+    Serial.println("[NET]: Connecting to WiFi...");
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     unsigned long start = millis();
@@ -48,7 +45,11 @@ bool connectNetwork()
         delay(100);
     }
     if (WiFi.status() != WL_CONNECTED)
+    {
+        Serial.println("[NET]: WiFi connection failed");
         return false;
+    }
+    Serial.println("[NET]: WiFi connection successful");
 
     mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
     mqttClient.setSocketTimeout(3);
@@ -59,9 +60,10 @@ bool connectNetwork()
         delay(100);
     }
 
-#ifdef STAY_AWAKE
-    connectedToNetwork = mqttClient.connected();
-#endif
+    if (!mqttClient.connected())
+        Serial.println("[NET]: MQTT connection failed");
+    else
+        Serial.println("[NET]: MQTT connection successful");
 
     return mqttClient.connected();
 }
@@ -120,7 +122,6 @@ void goToSleep(bool currentlyOpen)
         mqttClient.disconnect();
     if (WiFi.isConnected())
         WiFi.disconnect();
-    connectedToNetwork = false;
 
     // Wake when the pin goes to the opposite state of the current door state,
     // so any change (open->close or close->open) trigger an external wake.
