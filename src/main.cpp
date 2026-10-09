@@ -2,7 +2,11 @@
 // -------
 
 #include <Arduino.h>
+#include <WiFi.h>
+#include <PubSubClient.h>
 #include "esp_sleep.h"
+
+#include "secrets.h"
 
 // DEFINITIONS
 // -----------
@@ -13,6 +17,69 @@
 #define LED 8
 
 #define FIRMWARE_UPDATE_GRACE_PERIOD 10000
+
+// WiFi AND MQTT CONFIGURATION
+// ---------------------------
+
+#define MQTT_TOPIC "door-sensor/state"
+#define MQTT_CLIENT_ID "door-sensor-client-01"
+
+WiFiClient wifiClient;
+PubSubClient mqttClient(wifiClient);
+
+#ifdef STAY_AWAKE
+bool connectedToNetwork = false;
+#endif
+
+/// @brief Connects to the WiFi network and MQTT broker
+/// @return True if both WiFi and MQTT connections are successful, false otherwise
+bool connectNetwork()
+{
+
+    // Return early if already connected to the MQTT broker
+    if (mqttClient.connected())
+        return true;
+
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    unsigned long start = millis();
+    while (WiFi.status() != WL_CONNECTED && (millis() - start) < 10000)
+    {
+        delay(100);
+    }
+    if (WiFi.status() != WL_CONNECTED)
+        return false;
+
+    mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
+    mqttClient.setSocketTimeout(3);
+    start = millis();
+    while (!mqttClient.connected() && (millis() - start) < 10000)
+    {
+        mqttClient.connect(MQTT_CLIENT_ID);
+        delay(100);
+    }
+
+#ifdef STAY_AWAKE
+    connectedToNetwork = mqttClient.connected();
+#endif
+
+    return mqttClient.connected();
+}
+
+/// @brief Publishes the current state of the door to the MQTT broker
+/// @param doorOpened True if the door is opened, false if closed
+void publishState(bool doorOpened)
+{
+    if (!connectNetwork())
+    {
+        Serial.println("[NET]: Connection Failed, skipping publish");
+        return;
+    }
+    bool ok = mqttClient.publish(MQTT_TOPIC, doorOpened ? "OPEN" : "CLOSED", true);
+    mqttClient.loop(); // Ensure the MQTT client processes the publish request
+    delay(100);        // Give the MQTT client time to send the message
+    Serial.println("[NET]: State published: " + String(doorOpened ? "OPEN" : "CLOSED") + " (success: " + String(ok) + ")");
+}
 
 // STATE
 // -----
@@ -34,7 +101,7 @@ bool lastDoorState;
 void reportState(bool doorOpened)
 {
     Serial.println(doorOpened ? "[DOOR]: OPEN" : "[DOOR]: CLOSED");
-    digitalWrite(LED, doorOpened ? HIGH : LOW);
+    publishState(doorOpened);
 }
 
 /// @brief Puts the device into deep sleep, waiting for the door state to change
@@ -47,6 +114,14 @@ void goToSleep(bool currentlyOpen)
 #else
     Serial.println("[DEEPSLEEP]: Going to sleep...");
     Serial.flush();
+
+    // Disconnect from the network before going to deep sleep
+    if (mqttClient.connected())
+        mqttClient.disconnect();
+    if (WiFi.isConnected())
+        WiFi.disconnect();
+    connectedToNetwork = false;
+
     // Wake when the pin goes to the opposite state of the current door state,
     // so any change (open->close or close->open) trigger an external wake.
     esp_deepsleep_gpio_wake_up_mode_t wakeMode = currentlyOpen
@@ -152,6 +227,9 @@ void loop()
         lastDoorState = doorOpened;
         reportState(doorOpened);
     }
+
+    mqttClient.loop();
+
     delay(50);
 #endif
 }
