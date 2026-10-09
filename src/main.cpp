@@ -10,7 +10,7 @@
 #define BAUD_RATE 115200
 
 #define MAG_REED_SENSOR 4
-#define LED_BUILTIN 8
+#define LED 8
 
 /// @brief Reports the current state of the door (opened or closed)
 /// @param doorOpened True if the door is opened, false if closed
@@ -19,11 +19,11 @@ void reportState(bool doorOpened)
     Serial.println("Door state: " + String(doorOpened));
     if (doorOpened)
     {
-        digitalWrite(LED_BUILTIN, HIGH);
+        digitalWrite(LED, HIGH);
     }
     else
     {
-        digitalWrite(LED_BUILTIN, LOW);
+        digitalWrite(LED, LOW);
     }
 }
 
@@ -52,7 +52,7 @@ void setup()
     Serial.begin(BAUD_RATE);
 
     // Configure the pins for the LED and magnetic reed sensor
-    pinMode(LED_BUILTIN, OUTPUT);
+    pinMode(LED, OUTPUT);
     pinMode(MAG_REED_SENSOR, INPUT_PULLUP);
 
     Serial.println("Starting up...");
