@@ -27,9 +27,6 @@ unsigned long lastActivityTime = 0;
 // WiFi AND MQTT CONFIGURATION
 // ---------------------------
 
-#define MQTT_TOPIC "door-sensor/state"
-#define MQTT_CLIENT_ID "door-sensor-client-01"
-
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
 
@@ -53,11 +50,11 @@ bool connectNetwork()
 #endif
 
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
     unsigned long start = millis();
-    while (WiFi.status() != WL_CONNECTED && (millis() - start) < 10000)
-    {
-        delay(100);
-    }
+    while (WiFi.status() != WL_CONNECTED && (millis() - start) < WIFI_CONNECT_TIMEOUT_MS)
+        delay(WIFI_POLL_INTERVAL_MS);
+
     if (WiFi.status() != WL_CONNECTED)
     {
         Serial.println("[NET]: WiFi connection failed");
@@ -66,12 +63,12 @@ bool connectNetwork()
     Serial.println("[NET]: WiFi connection successful");
 
     mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
-    mqttClient.setSocketTimeout(3);
+    mqttClient.setSocketTimeout(MQTT_SOCKET_TIMEOUT_S);
     start = millis();
-    while (!mqttClient.connected() && (millis() - start) < 10000)
+    while (!mqttClient.connected() && (millis() - start) < MQTT_CONNECTION_TIMEOUT_MS)
     {
         mqttClient.connect(MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD);
-        delay(100);
+        delay(MQTT_POLL_INTERVAL_MS);
     }
 
     if (!mqttClient.connected())
@@ -97,8 +94,8 @@ bool publishState(bool doorOpened)
     String payload = "{\"state\":\"" + String(doorOpened ? "OPEN" : "CLOSED") + "\",\"runtime\":" + String(millis()) + "}";
 
     bool ok = mqttClient.publish(MQTT_TOPIC, payload.c_str(), true);
-    mqttClient.loop(); // Ensure the MQTT client processes the publish request
-    delay(50);         // Give the MQTT client time to send the message
+    mqttClient.loop();    // Ensure the MQTT client processes the publish request
+    delay(MQTT_SPACE_MS); // Give the MQTT client time to send the message
 
     if (ok)
     {
@@ -156,7 +153,7 @@ void goToSleep(bool currentlyOpen)
     esp_deepsleep_gpio_wake_up_mode_t wakeMode = currentlyOpen
                                                      ? ESP_GPIO_WAKEUP_GPIO_LOW
                                                      : ESP_GPIO_WAKEUP_GPIO_HIGH;
-    esp_deep_sleep_enable_gpio_wakeup(BIT(MAG_REED_SENSOR), wakeMode);
+    esp_deep_sleep_enable_gpio_wakeup(BIT(PIN_MAG_REED_SENSOR), wakeMode);
     esp_deep_sleep_start();
 #endif
 }
@@ -169,16 +166,16 @@ void goToSleep(bool currentlyOpen)
 void setup()
 {
     // Initialize the LED pin immediately
-    pinMode(LED, OUTPUT);
+    pinMode(PIN_LED, OUTPUT);
 
 #ifdef DEBUG
     // Blink the LED a few times to indicate debug mode is active
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < BLINK_COUNT; i++)
     {
-        digitalWrite(LED, HIGH);
-        delay(500);
-        digitalWrite(LED, LOW);
-        delay(500);
+        digitalWrite(PIN_LED, HIGH);
+        delay(BLINK_MS);
+        digitalWrite(PIN_LED, LOW);
+        delay(BLINK_MS);
     }
 #endif
 
@@ -186,18 +183,20 @@ void setup()
     Serial.begin(BAUD_RATE);
 
 #if defined(DEBUG) && !defined(STAY_AWAKE)
-    delay(2000); // give the host time to reattach to the USB port
+    // give the host time to reattach to the USB port
+    delay(USB_REATTACH_GRACE_MS);
 #endif
 
     // Configure the pins for the LED and magnetic reed sensor
-    pinMode(MAG_REED_SENSOR, INPUT_PULLUP);
+    pinMode(PIN_MAG_REED_SENSOR, INPUT_PULLUP);
 
     Serial.println("[BOOT]: Starting up...");
 
-    delay(50); // Short delay to allow the sensor to stabilize
+    // Short delay to allow the sensor to stabilize
+    delay(MAG_REED_STABILIZATION_DELAY_MS);
 
     // Read the current state of the door sensor (1 = open / no magnet, 0 = closed / magnet)
-    bool doorOpened = digitalRead(MAG_REED_SENSOR);
+    bool doorOpened = digitalRead(PIN_MAG_REED_SENSOR);
 
     lastDoorState = doorOpened;
 
@@ -253,7 +252,7 @@ void setup()
 void loop()
 {
     // Read the current state of the door sensor
-    bool doorOpened = digitalRead(MAG_REED_SENSOR);
+    bool doorOpened = digitalRead(PIN_MAG_REED_SENSOR);
     if (doorOpened != lastDoorState)
     {
         lastDoorState = doorOpened;
@@ -267,10 +266,10 @@ void loop()
 
     // Update the last publish time if the door state has changed
     mqttClient.loop();
-    delay(50);
+    delay(MQTT_SPACE_MS);
 
     // Check if the door has been in a steady state for long enough to go to sleep
-    if ((millis() - lastActivityTime) > DOOR_SETTLE_DELAY_MS && doorOpened == lastPublishedState)
+    if ((millis() - lastActivityTime) > DOOR_SETTLE_TIME_MS && doorOpened == lastPublishedState)
         goToSleep(doorOpened);
 
     // Force deep sleep if the device has been awake for too long
