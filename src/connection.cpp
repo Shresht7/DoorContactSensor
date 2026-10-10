@@ -21,12 +21,12 @@ static PubSubClient mqttClient(wifiClient);
 // CONNECT WIFI
 // ------------
 
-static bool isWiFiConnected()
+bool isWiFiConnected()
 {
     return WiFi.status() == WL_CONNECTED;
 }
 
-static bool connectWiFi(const char *ssid, const char *password)
+bool connectWiFi(const char *ssid, const char *password)
 {
     Serial.println("[NET]: Connecting to WiFi...");
     WiFi.mode(WIFI_STA);
@@ -64,7 +64,7 @@ int getRSSI()
 // CONNECT MQTT
 // ------------
 
-static bool connectMQTT(const char *broker, int port, const char *clientId, const char *username, const char *password)
+bool connectMQTT(const char *broker, int port, const char *clientId, const char *username, const char *password)
 {
     Serial.println("[NET]: Connecting to MQTT broker...");
 
@@ -160,14 +160,14 @@ void networkLoop()
 // DISCONNECT
 // ----------
 
-static void disconnectWiFi()
+void disconnectWiFi()
 {
 
     WiFi.disconnect(true);
     Serial.println("[NET]: Disconnected from WiFi network");
 }
 
-static void disconnectMQTT()
+void disconnectMQTT()
 {
     mqttClient.disconnect();
     Serial.println("[NET]: Disconnected from MQTT broker");
