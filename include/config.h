@@ -7,6 +7,12 @@
 // DEFINITIONS
 // ===========
 
+// FIRMWARE
+// --------
+
+/// The current firmware version of the device
+constexpr const char *FIRMWARE_VERSION = "0.1.0";
+
 // SERIAL COMMUNICATION
 // --------------------
 
