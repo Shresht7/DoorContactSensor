@@ -37,9 +37,8 @@ RTC_DATA_ATTR int lastKnownState = -1; // -1 marks no previous state yet
 RTC_DATA_ATTR uint8_t failedPublishes = 0;
 
 bool lastDoorState;
-unsigned long lastStateChangeTime = 0;
 int lastPublishedState = -1;
-unsigned long lastPublishTime = -1;
+unsigned long lastActivityTime = 0;
 
 // WiFi AND MQTT CONFIGURATION
 // ---------------------------
@@ -120,7 +119,6 @@ bool publishState(bool doorOpened)
     if (ok)
     {
         lastPublishedState = doorOpened;
-        lastPublishTime = millis();
         failedPublishes = 0;
     }
 
@@ -258,6 +256,10 @@ void setup()
         ok = reportState(doorOpened); // Report initial state
     }
 
+    // The publish above counts as activity: start the quiet window from now,
+    // not from boot, so the device waits STEADY_MS for the door to settle
+    lastActivityTime = millis();
+
     // If reporting the state failed, go to sleep to retry later
     if (!ok)
         goToSleep(doorOpened);
@@ -275,11 +277,11 @@ void loop()
     if (doorOpened != lastDoorState)
     {
         lastDoorState = doorOpened;
-        lastStateChangeTime = millis();
+        lastActivityTime = millis();
     }
 
     // Check if the door has been stable for the hold time/threshold before publishing the state
-    if ((millis() - lastStateChangeTime) > HOLD_MS && doorOpened != lastPublishedState)
+    if ((millis() - lastActivityTime) > HOLD_MS && doorOpened != lastPublishedState)
         if (!publishState(doorOpened))
             goToSleep(doorOpened); // Go to sleep if publishing fails
 
@@ -288,7 +290,7 @@ void loop()
     delay(50);
 
     // Check if the door has been in a steady state for long enough to go to sleep
-    if ((millis() - lastStateChangeTime) > STEADY_MS && doorOpened == lastPublishedState)
+    if ((millis() - lastActivityTime) > STEADY_MS && doorOpened == lastPublishedState)
         goToSleep(doorOpened);
 
     // Force deep sleep if the device has been awake for too long
