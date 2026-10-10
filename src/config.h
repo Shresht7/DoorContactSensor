@@ -21,7 +21,4 @@
 // Maximum time the device can stay awake before forcing deep sleep (in milliseconds)
 #define MAX_AWAKE 60000
 
-// Grace period for firmware updates (in milliseconds)
-#define FIRMWARE_UPDATE_GRACE_PERIOD 10000
-
 #endif // CONFIG_H

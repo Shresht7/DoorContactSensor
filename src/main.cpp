@@ -233,10 +233,6 @@ void setup()
     {
         // Woke up from other reasons (e.g., power-on reset)
         Serial.println("[WAKE]: First Boot!");
-#if defined(DEBUG) && !defined(STAY_AWAKE)
-        Serial.println("[WAKE]: Halting for firmware update grace period...");
-        delay(FIRMWARE_UPDATE_GRACE_PERIOD); // Halt for firmware update grace period
-#endif
         ok = reportState(doorOpened); // Report initial state
     }
 
