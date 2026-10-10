@@ -7,24 +7,8 @@
 #include "esp_sleep.h"
 
 #include "helpers.h"
+#include "config.h"
 #include "secrets.h"
-
-// DEFINITIONS
-// -----------
-
-#define BAUD_RATE 115200
-
-#define MAG_REED_SENSOR 4
-#define LED 8
-
-#define FIRMWARE_UPDATE_GRACE_PERIOD 10000
-
-#define HOLD_MS 250   // Minimum time the door state must remain unchanged before considering it stable
-#define STEADY_MS 500 // Minimum time the door state must remain steady before considering deep sleep
-
-#define MAX_AWAKE 60000 // Maximum time the device can stay awake before forcing deep sleep (in milliseconds)
-
-#define RETRY_BASE_US (60ULL * 1000 * 1000) // First retry after 60 seconds
 
 // STATE
 // -----
@@ -281,7 +265,7 @@ void loop()
     }
 
     // Check if the door has been stable for the hold time/threshold before publishing the state
-    if ((millis() - lastActivityTime) > HOLD_MS && doorOpened != lastPublishedState)
+    if ((millis() - lastActivityTime) > DOOR_STABILITY_TIME_MS && doorOpened != lastPublishedState)
         if (!publishState(doorOpened))
             goToSleep(doorOpened); // Go to sleep if publishing fails
 
@@ -290,7 +274,7 @@ void loop()
     delay(50);
 
     // Check if the door has been in a steady state for long enough to go to sleep
-    if ((millis() - lastActivityTime) > STEADY_MS && doorOpened == lastPublishedState)
+    if ((millis() - lastActivityTime) > DOOR_SETTLE_DELAY_MS && doorOpened == lastPublishedState)
         goToSleep(doorOpened);
 
     // Force deep sleep if the device has been awake for too long
