@@ -206,4 +206,7 @@ void loop()
     // Force deep sleep if the device has been awake for too long
     if (millis() > MAX_AWAKE_TIME_MS)
         goToSleep(doorOpened);
+
+    // Throttle the loop to avoid busy-waiting
+    delay(LOOP_DELAY_MS);
 }

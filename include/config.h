@@ -16,6 +16,9 @@ constexpr unsigned int BAUD_RATE = 115200;
 // Grace period to allow the USB host to reattach after a reset (in milliseconds)
 constexpr unsigned int USB_REATTACH_GRACE_MS = 2000;
 
+// Loop delay to avoid busy-waiting (in milliseconds)
+constexpr unsigned int LOOP_DELAY_MS = 50;
+
 // PIN CONFIGURATIONS
 // ------------------
 
