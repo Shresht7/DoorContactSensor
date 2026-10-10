@@ -21,6 +21,8 @@
 #define HOLD_MS 250   // Minimum time the door state must remain unchanged before considering it stable
 #define STEADY_MS 500 // Minimum time the door state must remain steady before considering deep sleep
 
+#define MAX_AWAKE 60000 // Maximum time the device can stay awake before forcing deep sleep (in milliseconds)
+
 // STATE
 // -----
 
@@ -93,12 +95,13 @@ bool connectNetwork()
 
 /// @brief Publishes the current state of the door to the MQTT broker
 /// @param doorOpened True if the door is opened, false if closed
-void publishState(bool doorOpened)
+/// @return True if the state was successfully published, false otherwise
+bool publishState(bool doorOpened)
 {
     if (!connectNetwork())
     {
         Serial.println("[NET]: Connection Failed, skipping publish");
-        return;
+        return false;
     }
 
     // Construct the JSON payload
@@ -115,6 +118,7 @@ void publishState(bool doorOpened)
     }
 
     Serial.println("[NET]: State published: " + String(doorOpened ? "OPEN" : "CLOSED") + " (success: " + String(ok) + ")");
+    return ok;
 }
 
 // FUNCTIONS
@@ -248,9 +252,11 @@ void loop()
         lastDoorState = doorOpened;
         lastStateChangeTime = millis();
     }
-    // Check if the door has been stable for the hold time
+
+    // Check if the door has been stable for the hold time/threshold before publishing the state
     if ((millis() - lastStateChangeTime) > HOLD_MS && doorOpened != lastPublishedState)
-        publishState(doorOpened);
+        if (!publishState(doorOpened))
+            goToSleep(doorOpened); // Go to sleep if publishing fails
 
     // Update the last publish time if the door state has changed
     mqttClient.loop();
@@ -258,5 +264,9 @@ void loop()
 
     // Check if the door has been in a steady state for long enough to go to sleep
     if ((millis() - lastStateChangeTime) > STEADY_MS && doorOpened == lastPublishedState)
+        goToSleep(doorOpened);
+
+    // Force deep sleep if the device has been awake for too long
+    if (millis() > MAX_AWAKE)
         goToSleep(doorOpened);
 }
