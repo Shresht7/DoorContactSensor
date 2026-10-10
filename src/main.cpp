@@ -163,17 +163,6 @@ void setup()
     // Initialize the LED pin immediately
     indicatorBegin();
 
-#ifdef DEBUG
-    // Blink the LED a few times to indicate debug mode is active
-    for (int i = 0; i < BLINK_COUNT; i++)
-    {
-        digitalWrite(PIN_LED, HIGH);
-        delay(BLINK_MS);
-        digitalWrite(PIN_LED, LOW);
-        delay(BLINK_MS);
-    }
-#endif
-
     // Initialize serial communication
     Serial.begin(BAUD_RATE);
 
