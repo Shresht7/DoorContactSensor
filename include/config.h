@@ -2,6 +2,7 @@
 #define CONFIG_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 // ===========
 // DEFINITIONS
@@ -77,6 +78,12 @@ constexpr unsigned int MQTT_POLL_INTERVAL_MS = 100;
 
 // Space between MQTT connection attempts (in milliseconds)
 constexpr unsigned int MQTT_SPACE_MS = 100;
+
+// PAYLOAD
+// -------
+
+// Size of the buffer used for storing MQTT payloads (in bytes)
+constexpr size_t PAYLOAD_BUFFER_SIZE = 192;
 
 // EXPONENTIAL BACKOFF
 // -------------------

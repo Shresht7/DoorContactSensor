@@ -5,6 +5,7 @@
 #include "esp_sleep.h"
 
 #include "connection.h"
+#include "payload.h"
 #include "deepsleep.h"
 #include "helpers.h"
 #include "config.h"
@@ -23,23 +24,49 @@ bool lastDoorState;
 int lastPublishedState = -1;
 unsigned long lastActivityTime = 0;
 
+// Why the device woke up this cycle
+static WakeReason wakeReason = WakeReason::WAKE_REASON_BOOT;
+
 /// @brief Publishes the current state of the door to the MQTT broker
 /// @param doorOpened True if the door is opened, false if closed
 /// @return True if the state was successfully published, false otherwise
 bool publishState(bool doorOpened)
 {
+    // Ensure the network is connected before attempting to publish
+    if (!connectNetwork())
+    {
+        Serial.println("[NET]: Connection failed, skipping publish");
+        return false;
+    }
+
+    // Prepare the status report structure with the current state and metadata
+    StatusReport report = {
+        doorClosed : !doorOpened,
+        rssi : getRSSI(),
+        wakeReason : WakeReasonToString(wakeReason),
+        wakeCount : wakeCount,
+        failedPublishes : failedPublishes,
+        awakeMs : (uint32_t)millis(),
+        firmwareVersion : FIRMWARE_VERSION
+    };
+
     // Construct the JSON payload
-    String payload = "{\"state\":\"" + String(doorOpened ? "OPEN" : "CLOSED") + "\",\"runtime\":" + String(millis()) + "}";
+    char payload[PAYLOAD_BUFFER_SIZE];
+    if (buildStatusReportPayload(payload, sizeof(payload), report) == 0)
+    {
+        Serial.println("[NET]: Payload too large for buffer, not publishing");
+        return false;
+    }
 
     // Attempt to publish the state to the MQTT broker
-    bool ok = publish(MQTT_TOPIC, payload.c_str(), true);
+    bool ok = publish(MQTT_TOPIC, payload, true);
     if (ok)
     {
         lastPublishedState = doorOpened;
         failedPublishes = 0;
     }
 
-    Serial.println("[NET]: State published: " + String(doorOpened ? "OPEN" : "CLOSED") + " (success: " + String(ok) + ")");
+    Serial.printf("[NET]: Published %s (success: %d)\n", doorOpened ? "OPEN" : "CLOSED", ok);
     return ok;
 }
 
@@ -130,13 +157,14 @@ void setup()
     lastDoorState = doorOpened;
 
     // Determine the wakeup cause
-    esp_sleep_wakeup_cause_t wakeReason = esp_sleep_get_wakeup_cause();
+    esp_sleep_wakeup_cause_t wakeCause = esp_sleep_get_wakeup_cause();
 
     // Log Wake events
+    wakeReason = wakeReasonFromCause(wakeCause);
     wakeCount++;
 #ifdef DEBUG
     Serial.printf("[WAKE]: #%lu, reason %d, door %d (previous %d)\n",
-                  (unsigned long)wakeCount, (int)wakeReason, (int)doorOpened, lastKnownState);
+                  (unsigned long)wakeCount, (int)wakeCause, (int)doorOpened, lastKnownState);
     if (lastKnownState == (int)doorOpened)
     {
         Serial.println("[WAKE]: !! Wake with unchanged state (bounce or floating pin)");
@@ -145,13 +173,13 @@ void setup()
     lastKnownState = (int)doorOpened;
 
     bool ok;
-    if (wakeReason == ESP_SLEEP_WAKEUP_GPIO)
+    if (wakeCause == ESP_SLEEP_WAKEUP_GPIO)
     {
         // Woke up from external wakeup (door sensor)
         Serial.println("[WAKE]: Woke up from external wakeup (door sensor)");
         ok = reportState(doorOpened); // Report current state of door
     }
-    else if (wakeReason == ESP_SLEEP_WAKEUP_TIMER)
+    else if (wakeCause == ESP_SLEEP_WAKEUP_TIMER)
     {
         // Woke up from timer (retry)
         Serial.println("[WAKE]: Woke up from timer (retry or heartbeat)");
