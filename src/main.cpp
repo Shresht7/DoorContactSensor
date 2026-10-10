@@ -77,9 +77,14 @@ void publishState(bool doorOpened)
         Serial.println("[NET]: Connection Failed, skipping publish");
         return;
     }
-    bool ok = mqttClient.publish(MQTT_TOPIC, doorOpened ? "OPEN" : "CLOSED", true);
+
+    // Construct the JSON payload
+    String payload = "{\"state\":\"" + String(doorOpened ? "OPEN" : "CLOSED") + "\",\"runtime\":" + String(millis()) + "}";
+
+    bool ok = mqttClient.publish(MQTT_TOPIC, payload.c_str(), true);
     mqttClient.loop(); // Ensure the MQTT client processes the publish request
     delay(100);        // Give the MQTT client time to send the message
+
     Serial.println("[NET]: State published: " + String(doorOpened ? "OPEN" : "CLOSED") + " (success: " + String(ok) + ")");
 }
 
