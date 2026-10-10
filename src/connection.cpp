@@ -5,7 +5,7 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 
-#include "network.h"
+#include "connection.h"
 #include "config.h"
 #include "secrets.h"
 
