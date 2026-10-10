@@ -65,7 +65,7 @@ constexpr unsigned int DOOR_SETTLE_TIME_MS = 500;
 // ----
 
 // Timeout for WiFi connection attempts (in milliseconds)
-constexpr unsigned int WIFI_CONNECT_TIMEOUT_MS = 10000;
+constexpr unsigned int WIFI_CONNECT_TIMEOUT_MS = 4000;
 
 // Polling interval for checking WiFi connection status (in milliseconds)
 constexpr unsigned int WIFI_POLL_INTERVAL_MS = 100;
@@ -83,7 +83,7 @@ constexpr const char *MQTT_TOPIC = "door-sensor/state";
 constexpr unsigned int MQTT_SOCKET_TIMEOUT_S = 3;
 
 // MQTT connection timeout (in milliseconds)
-constexpr unsigned int MQTT_CONNECTION_TIMEOUT_MS = 10000;
+constexpr unsigned int MQTT_CONNECTION_TIMEOUT_MS = 4000;
 
 // Polling interval for checking MQTT connection status (in milliseconds)
 constexpr unsigned int MQTT_POLL_INTERVAL_MS = 100;
