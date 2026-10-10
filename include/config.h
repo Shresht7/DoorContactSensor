@@ -33,7 +33,7 @@ constexpr unsigned int BAUD_RATE = 115200;
 constexpr unsigned int USB_REATTACH_GRACE_MS = 2000;
 
 // Loop delay to avoid busy-waiting (in milliseconds)
-constexpr unsigned int LOOP_DELAY_MS = 50;
+constexpr unsigned int LOOP_DELAY_MS = 20;
 
 // PIN CONFIGURATIONS
 // ------------------
@@ -53,7 +53,7 @@ constexpr unsigned int BLINK_MS = 250;
 // -----------------
 
 // Minimum time the door state must remain unchanged before considering it stable
-constexpr unsigned int DOOR_STABILITY_TIME_MS = 250;
+constexpr unsigned int DOOR_STABILITY_TIME_MS = 100;
 
 // Minimum time the door state must remain steady before considering deep sleep
 constexpr unsigned int DOOR_SETTLE_TIME_MS = 500;
