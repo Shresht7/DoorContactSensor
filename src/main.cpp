@@ -187,9 +187,6 @@ void setup()
 
     Serial.println("[BOOT]: Starting up...");
 
-    // Short delay to allow the sensor to stabilize
-    delay(MAG_REED_STABILIZATION_DELAY_MS);
-
     // Read the current state of the door sensor (1 = open / no magnet, 0 = closed / magnet)
     bool doorOpened = digitalRead(PIN_MAG_REED_SENSOR);
 

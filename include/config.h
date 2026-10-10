@@ -41,9 +41,6 @@ constexpr unsigned int LOOP_DELAY_MS = 20;
 constexpr uint8_t PIN_MAG_REED_SENSOR = 4; // Magnetic reed sensor pin
 constexpr uint8_t PIN_LED = 8;             // LED pin
 
-// Delay to allow the magnetic reed sensor to stabilize
-constexpr unsigned int MAG_REED_STABILIZATION_DELAY_MS = 50;
-
 // Some boards wire the onboard LED active-low. Flip this if "on" looks like "off"
 constexpr bool LED_ACTIVE_HIGH = false;
 
