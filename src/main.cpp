@@ -8,6 +8,7 @@
 #include "payload.h"
 #include "deepsleep.h"
 #include "discovery.h"
+#include "indicator.h"
 #include "helpers.h"
 #include "config.h"
 
@@ -65,6 +66,7 @@ bool publishState(bool doorOpened)
     {
         lastPublishedState = doorOpened;
         failedPublishes = 0;
+        indicatorPulse(BLINK_MS);
     }
 
     Serial.printf("[NET]: Published %s (success: %d)\n", doorOpened ? "OPEN" : "CLOSED", ok);
@@ -90,6 +92,9 @@ void goToSleep(bool currentlyOpen)
 #ifdef STAY_AWAKE
     return;
 #else
+    // Turn off the indicator LED before going to deep sleep
+    indicatorOff();
+
     // Always wake periodically to publish heartbeat
     uint64_t timerWakeUs = HEARTBEAT_INTERVAL_US;
 
@@ -156,7 +161,7 @@ static void publishDiscovery()
 void setup()
 {
     // Initialize the LED pin immediately
-    pinMode(PIN_LED, OUTPUT);
+    indicatorBegin();
 
 #ifdef DEBUG
     // Blink the LED a few times to indicate debug mode is active
@@ -248,6 +253,9 @@ void setup()
 /// @brief Runs indefinitely after setup() has completed
 void loop()
 {
+    // Update the indicator LED based on its current pulse state
+    indicatorUpdate();
+
     // Read the current state of the door sensor
     bool doorOpened = digitalRead(PIN_MAG_REED_SENSOR);
     if (doorOpened != lastDoorState)
