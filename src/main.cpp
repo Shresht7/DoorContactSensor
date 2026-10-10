@@ -5,6 +5,7 @@
 #include "esp_sleep.h"
 
 #include "connection.h"
+#include "deepsleep.h"
 #include "helpers.h"
 #include "config.h"
 
@@ -62,31 +63,24 @@ void goToSleep(bool currentlyOpen)
     Serial.println("[DEV]: STAYING AWAKE!");
     return;
 #else
+    uint64_t timerWakeUs = 0;
+
     // If the current state never reached the broker, also wake on a timer
     // to retry. The delay grows with each consecutive failure.
     if (lastPublishedState != (int)currentlyOpen)
     {
-        uint64_t retryUs = exponentialBackoff(RETRY_BASE_US, failedPublishes);
+        timerWakeUs = exponentialBackoff(RETRY_BASE_US, failedPublishes);
         if (failedPublishes < UINT8_MAX)
             failedPublishes++;
-        esp_sleep_enable_timer_wakeup(retryUs);
         Serial.printf("[DEEPSLEEP]: State not published, retrying in %llu s\n",
-                      (unsigned long long)(retryUs / 1000000ULL));
+                      (unsigned long long)(timerWakeUs / 1000000ULL));
     }
-
-    Serial.println("[DEEPSLEEP]: Going to sleep...");
-    Serial.flush();
 
     // Disconnect from the network before going to deep sleep
     disconnectNetwork();
 
-    // Wake when the pin goes to the opposite state of the current door state,
-    // so any change (open->close or close->open) trigger an external wake.
-    esp_deepsleep_gpio_wake_up_mode_t wakeMode = currentlyOpen
-                                                     ? ESP_GPIO_WAKEUP_GPIO_LOW
-                                                     : ESP_GPIO_WAKEUP_GPIO_HIGH;
-    esp_deep_sleep_enable_gpio_wakeup(BIT(PIN_MAG_REED_SENSOR), wakeMode);
-    esp_deep_sleep_start();
+    // Setup wake triggers and enter deep sleep
+    enterDeepSleep(currentlyOpen, timerWakeUs);
 #endif
 }
 
