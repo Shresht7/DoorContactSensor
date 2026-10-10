@@ -18,6 +18,10 @@ bool isWiFiConnected();
 /// @return True if the connection is successful, false otherwise
 bool connectWiFi(const char *ssid, const char *password);
 
+/// @brief Gets the Received Signal Strength Indicator (RSSI) of the current WiFi connection
+/// @return The RSSI value in dBm, or 0 if not connected
+int getRSSI();
+
 /// @brief Connects to the specified MQTT broker
 /// @param broker The address of the MQTT broker
 /// @param port The port of the MQTT broker

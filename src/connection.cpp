@@ -54,6 +54,13 @@ static bool connectWiFi(const char *ssid, const char *password)
     return true;
 }
 
+int getRSSI()
+{
+    if (!isWiFiConnected())
+        return 0;
+    return WiFi.RSSI();
+}
+
 // CONNECT MQTT
 // ------------
 
