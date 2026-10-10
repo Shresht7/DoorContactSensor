@@ -2,6 +2,7 @@
 #define HELPERS_H
 
 #include <stdint.h>
+#include "esp_sleep.h"
 
 // Maximum allowed delay time for exponential backoff in microseconds (default: 8 hours)
 constexpr uint64_t EXPONENTIAL_BACKOFF_CAP = (8ULL * 60 * 60 * 1000 * 1000);
