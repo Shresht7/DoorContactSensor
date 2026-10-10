@@ -2,13 +2,11 @@
 // -------
 
 #include <Arduino.h>
-#include <WiFi.h>
-#include <PubSubClient.h>
 #include "esp_sleep.h"
 
+#include "connection.h"
 #include "helpers.h"
 #include "config.h"
-#include "secrets.h"
 
 // STATE
 // -----
@@ -24,79 +22,16 @@ bool lastDoorState;
 int lastPublishedState = -1;
 unsigned long lastActivityTime = 0;
 
-// WiFi AND MQTT CONFIGURATION
-// ---------------------------
-
-WiFiClient wifiClient;
-PubSubClient mqttClient(wifiClient);
-
-/// @brief Connects to the WiFi network and MQTT broker
-/// @return True if both WiFi and MQTT connections are successful, false otherwise
-bool connectNetwork()
-{
-
-    // Return early if already connected to the MQTT broker
-    if (mqttClient.connected())
-        return true;
-
-    Serial.println("[NET]: Connecting to WiFi...");
-    WiFi.mode(WIFI_STA);
-
-    // Configure the static IP address, if provided
-    // This ensures the device uses a static IP address instead of obtaining one via DHCP
-    // cutting down the time it takes to negotiate a DHCP lease and improving connection reliability
-#ifdef STATIC_IP_ADDRESS
-    WiFi.config(STATIC_IP_ADDRESS);
-#endif
-
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-
-    unsigned long start = millis();
-    while (WiFi.status() != WL_CONNECTED && (millis() - start) < WIFI_CONNECT_TIMEOUT_MS)
-        delay(WIFI_POLL_INTERVAL_MS);
-
-    if (WiFi.status() != WL_CONNECTED)
-    {
-        Serial.println("[NET]: WiFi connection failed");
-        return false;
-    }
-    Serial.println("[NET]: WiFi connection successful");
-
-    mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
-    mqttClient.setSocketTimeout(MQTT_SOCKET_TIMEOUT_S);
-    start = millis();
-    while (!mqttClient.connected() && (millis() - start) < MQTT_CONNECTION_TIMEOUT_MS)
-    {
-        mqttClient.connect(MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD);
-        delay(MQTT_POLL_INTERVAL_MS);
-    }
-
-    if (!mqttClient.connected())
-        Serial.println("[NET]: MQTT connection failed");
-    else
-        Serial.println("[NET]: MQTT connection successful");
-
-    return mqttClient.connected();
-}
-
 /// @brief Publishes the current state of the door to the MQTT broker
 /// @param doorOpened True if the door is opened, false if closed
 /// @return True if the state was successfully published, false otherwise
 bool publishState(bool doorOpened)
 {
-    if (!connectNetwork())
-    {
-        Serial.println("[NET]: Connection Failed, skipping publish");
-        return false;
-    }
-
     // Construct the JSON payload
     String payload = "{\"state\":\"" + String(doorOpened ? "OPEN" : "CLOSED") + "\",\"runtime\":" + String(millis()) + "}";
 
-    bool ok = mqttClient.publish(MQTT_TOPIC, payload.c_str(), true);
-    mqttClient.loop();    // Ensure the MQTT client processes the publish request
-    delay(MQTT_SPACE_MS); // Give the MQTT client time to send the message
-
+    // Attempt to publish the state to the MQTT broker
+    bool ok = publish(MQTT_TOPIC, payload.c_str(), true);
     if (ok)
     {
         lastPublishedState = doorOpened;
@@ -143,10 +78,7 @@ void goToSleep(bool currentlyOpen)
     Serial.flush();
 
     // Disconnect from the network before going to deep sleep
-    if (mqttClient.connected())
-        mqttClient.disconnect();
-    if (WiFi.isConnected())
-        WiFi.disconnect();
+    disconnectNetwork();
 
     // Wake when the pin goes to the opposite state of the current door state,
     // so any change (open->close or close->open) trigger an external wake.
@@ -264,9 +196,8 @@ void loop()
         if (!publishState(doorOpened))
             goToSleep(doorOpened); // Go to sleep if publishing fails
 
-    // Update the last publish time if the door state has changed
-    mqttClient.loop();
-    delay(MQTT_SPACE_MS);
+    // Allow the network client to process any pending messages
+    networkLoop();
 
     // Check if the door has been in a steady state for long enough to go to sleep
     if ((millis() - lastActivityTime) > DOOR_SETTLE_TIME_MS && doorOpened == lastPublishedState)
