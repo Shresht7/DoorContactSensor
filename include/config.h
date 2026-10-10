@@ -44,7 +44,7 @@ constexpr uint8_t PIN_LED = 8;             // LED pin
 // Some boards wire the onboard LED active-low. Flip this if "on" looks like "off"
 constexpr bool LED_ACTIVE_HIGH = false;
 
-// Delay for LED blink during bootup (in milliseconds)
+// Duration of the LED blink (in milliseconds)
 constexpr unsigned int BLINK_MS = 250;
 
 // STABILITY TIMINGS
