@@ -88,7 +88,6 @@ bool reportState(bool doorOpened)
 void goToSleep(bool currentlyOpen)
 {
 #ifdef STAY_AWAKE
-    Serial.println("[DEV]: STAYING AWAKE!");
     return;
 #else
     // Always wake periodically to publish heartbeat
