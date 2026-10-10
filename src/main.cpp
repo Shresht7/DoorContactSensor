@@ -38,6 +38,14 @@ bool connectNetwork()
 
     Serial.println("[NET]: Connecting to WiFi...");
     WiFi.mode(WIFI_STA);
+
+    // Configure the static IP address, if provided
+    // This ensures the device uses a static IP address instead of obtaining one via DHCP
+    // cutting down the time it takes to negotiate a DHCP lease and improving connection reliability
+#ifdef STATIC_IP_ADDRESS
+    WiFi.config(STATIC_IP_ADDRESS);
+#endif
+
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     unsigned long start = millis();
     while (WiFi.status() != WL_CONNECTED && (millis() - start) < 10000)
