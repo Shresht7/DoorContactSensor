@@ -111,7 +111,7 @@ constexpr unsigned int MAX_AWAKE_TIME_MS = 60000;
 constexpr const char *DISCOVERY_PREFIX = "homeassistant";
 
 // Time after which the door state is considered expired (in seconds)
-constexpr uint32_t DOOR_EXPIRE_AFTER_S = (uint32_t)((HEARTBEAT_INTERVAL_US / 1000000ULL) * 2.5);
+constexpr uint32_t DOOR_EXPIRE_AFTER_S = (uint32_t)((HEARTBEAT_INTERVAL_US / 1000000ULL) * 2);
 
 // Size of the buffer used for Home Assistant discovery messages (in bytes)
 constexpr size_t DISCOVERY_BUFFER_SIZE = 1536;
