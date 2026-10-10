@@ -19,6 +19,6 @@
 #define RETRY_BASE_US (60ULL * 1000 * 1000)
 
 // Maximum time the device can stay awake before forcing deep sleep (in milliseconds)
-#define MAX_AWAKE 60000
+#define MAX_AWAKE_TIME_MS 60000
 
 #endif // CONFIG_H
