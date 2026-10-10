@@ -1,15 +1,52 @@
-# Door Sense
+# Door Contact Sensor
 
-A ESPHome powered door-contact sensor running on a ESP32C3 Super Mini.
+Battery-powered door contact sensor firmware for the ESP32-C3 Super Mini. Publishes open/closed state over MQTT and auto-discovers in Home Assistant.
 
 ## Hardware
 
-- ESP32C3 Super Mini
-- Magnetic Reed Sensor Module
-- TP4056 Battery Charging Module
-- Lithium Battery
+- ESP32-C3 Super Mini
+- Magnetic reed sensor module (GPIO4, input pullup)
+- TP4056 charger + lithium battery
+- Onboard LED on GPIO8
 
-## 📕 References
+## Requirements
+
+- [PlatformIO](https://platformio.org/)
+
+## Setup
+
+⚠️ TODO
+
+## Build & Upload
+
+PlatformIO environments:
+
+| Env       | Purpose                            |
+| --------- | ---------------------------------- |
+| `release` | Production build (deep sleep on)   |
+| `debug`   | Serial over USB, no deep sleep     |
+| `dev`     | Debug + stays awake (`STAY_AWAKE`) |
+
+### Development
+
+```sh
+pio run -e dev -t upload
+pio device monitor -e dev
+```
+
+### Release
+
+```sh
+pio run -e release -t upload
+```
+
+## Behavior
+
+- Publishes `door-sensor/state` as JSON: `state`, `rssi`, `wake`, `wake_count`, `failed`, `awake_ms`, `fw`.
+- Wakes from deep sleep on door state change (GPIO) or a heartbeat timer; retries failed publishes with exponential backoff.
+- Publishes Home Assistant MQTT discovery on connect, so the device shows up automatically.
+
+## References
 
 - https://esphome.io/
 - https://esphome.io/components/deep_sleep
