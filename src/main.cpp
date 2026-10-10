@@ -6,6 +6,7 @@
 #include <PubSubClient.h>
 #include "esp_sleep.h"
 
+#include "helpers.h"
 #include "secrets.h"
 
 // DEFINITIONS
@@ -23,6 +24,8 @@
 
 #define MAX_AWAKE 60000 // Maximum time the device can stay awake before forcing deep sleep (in milliseconds)
 
+#define RETRY_BASE_US (60ULL * 1000 * 1000) // First retry after 60 seconds
+
 // STATE
 // -----
 
@@ -30,10 +33,12 @@
 RTC_DATA_ATTR uint32_t wakeCount = 0;
 RTC_DATA_ATTR int lastKnownState = -1; // -1 marks no previous state yet
 
+// Counts consecutive failures; reset when a publish succeeds.
+RTC_DATA_ATTR uint8_t failedPublishes = 0;
+
 bool lastDoorState;
-unsigned long lastStateChangeTime = 0;
 int lastPublishedState = -1;
-unsigned long lastPublishTime = -1;
+unsigned long lastActivityTime = 0;
 
 // WiFi AND MQTT CONFIGURATION
 // ---------------------------
@@ -114,7 +119,7 @@ bool publishState(bool doorOpened)
     if (ok)
     {
         lastPublishedState = doorOpened;
-        lastPublishTime = millis();
+        failedPublishes = 0;
     }
 
     Serial.println("[NET]: State published: " + String(doorOpened ? "OPEN" : "CLOSED") + " (success: " + String(ok) + ")");
@@ -126,10 +131,11 @@ bool publishState(bool doorOpened)
 
 /// @brief Reports the current state of the door (opened or closed)
 /// @param doorOpened True if the door is opened (no magnet), false if closed (magnet)
-void reportState(bool doorOpened)
+/// @return True if the state was successfully reported, false otherwise
+bool reportState(bool doorOpened)
 {
     Serial.println(doorOpened ? "[DOOR]: OPEN" : "[DOOR]: CLOSED");
-    publishState(doorOpened);
+    return publishState(doorOpened);
 }
 
 /// @brief Puts the device into deep sleep, waiting for the door state to change
@@ -140,6 +146,18 @@ void goToSleep(bool currentlyOpen)
     Serial.println("[DEV]: STAYING AWAKE!");
     return;
 #else
+    // If the current state never reached the broker, also wake on a timer
+    // to retry. The delay grows with each consecutive failure.
+    if (lastPublishedState != (int)currentlyOpen)
+    {
+        uint64_t retryUs = exponentialBackoff(RETRY_BASE_US, failedPublishes);
+        if (failedPublishes < UINT8_MAX)
+            failedPublishes++;
+        esp_sleep_enable_timer_wakeup(retryUs);
+        Serial.printf("[DEEPSLEEP]: State not published, retrying in %llu s\n",
+                      (unsigned long long)(retryUs / 1000000ULL));
+    }
+
     Serial.println("[DEEPSLEEP]: Going to sleep...");
     Serial.flush();
 
@@ -197,10 +215,7 @@ void setup()
     // Read the current state of the door sensor (1 = open / no magnet, 0 = closed / magnet)
     bool doorOpened = digitalRead(MAG_REED_SENSOR);
 
-#ifdef STAY_AWAKE
-    // In stay awake mode, remember the last door state
     lastDoorState = doorOpened;
-#endif
 
     // Determine the wakeup cause
     esp_sleep_wakeup_cause_t wakeReason = esp_sleep_get_wakeup_cause();
@@ -217,11 +232,18 @@ void setup()
 #endif
     lastKnownState = (int)doorOpened;
 
+    bool ok;
     if (wakeReason == ESP_SLEEP_WAKEUP_GPIO)
     {
         // Woke up from external wakeup (door sensor)
         Serial.println("[WAKE]: Woke up from external wakeup (door sensor)");
-        reportState(doorOpened); // Report current state of door
+        ok = reportState(doorOpened); // Report current state of door
+    }
+    else if (wakeReason == ESP_SLEEP_WAKEUP_TIMER)
+    {
+        // Woke up from timer (retry)
+        Serial.println("[WAKE]: Woke up from timer (retry)");
+        ok = reportState(doorOpened); // Report current state of door
     }
     else
     {
@@ -231,11 +253,16 @@ void setup()
         Serial.println("[WAKE]: Halting for firmware update grace period...");
         delay(FIRMWARE_UPDATE_GRACE_PERIOD); // Halt for firmware update grace period
 #endif
-        reportState(doorOpened); // Report initial state
+        ok = reportState(doorOpened); // Report initial state
     }
 
-    // // Go to deep sleep, waiting for the door state to change...
-    // goToSleep(doorOpened);
+    // The publish above counts as activity: start the quiet window from now,
+    // not from boot, so the device waits STEADY_MS for the door to settle
+    lastActivityTime = millis();
+
+    // If reporting the state failed, go to sleep to retry later
+    if (!ok)
+        goToSleep(doorOpened);
 }
 
 // ----
@@ -250,11 +277,11 @@ void loop()
     if (doorOpened != lastDoorState)
     {
         lastDoorState = doorOpened;
-        lastStateChangeTime = millis();
+        lastActivityTime = millis();
     }
 
     // Check if the door has been stable for the hold time/threshold before publishing the state
-    if ((millis() - lastStateChangeTime) > HOLD_MS && doorOpened != lastPublishedState)
+    if ((millis() - lastActivityTime) > HOLD_MS && doorOpened != lastPublishedState)
         if (!publishState(doorOpened))
             goToSleep(doorOpened); // Go to sleep if publishing fails
 
@@ -263,7 +290,7 @@ void loop()
     delay(50);
 
     // Check if the door has been in a steady state for long enough to go to sleep
-    if ((millis() - lastStateChangeTime) > STEADY_MS && doorOpened == lastPublishedState)
+    if ((millis() - lastActivityTime) > STEADY_MS && doorOpened == lastPublishedState)
         goToSleep(doorOpened);
 
     // Force deep sleep if the device has been awake for too long
