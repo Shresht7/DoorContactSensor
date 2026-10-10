@@ -83,6 +83,10 @@ constexpr uint64_t RETRY_BASE_US = (60ULL * 1000 * 1000);
 // DEEP SLEEP
 // ----------
 
+// Wake this often even if the door hasn't moved, and publish the current state,
+// so Home Assistant can tell "closed and fine" apart from "dead battery"
+constexpr uint64_t HEARTBEAT_INTERVAL_US = (8ULL * 60 * 60 * 1000 * 1000);
+
 // Maximum time the device can stay awake before forcing deep sleep (in milliseconds)
 constexpr unsigned int MAX_AWAKE_TIME_MS = 60000;
 

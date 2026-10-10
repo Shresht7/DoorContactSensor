@@ -63,15 +63,18 @@ void goToSleep(bool currentlyOpen)
     Serial.println("[DEV]: STAYING AWAKE!");
     return;
 #else
-    uint64_t timerWakeUs = 0;
+    // Always wake periodically to publish heartbeat
+    uint64_t timerWakeUs = HEARTBEAT_INTERVAL_US;
 
     // If the current state never reached the broker, also wake on a timer
     // to retry. The delay grows with each consecutive failure.
     if (lastPublishedState != (int)currentlyOpen)
     {
-        timerWakeUs = exponentialBackoff(RETRY_BASE_US, failedPublishes);
+        uint64_t retryUs = exponentialBackoff(RETRY_BASE_US, failedPublishes);
         if (failedPublishes < UINT8_MAX)
             failedPublishes++;
+        if (retryUs < timerWakeUs)
+            timerWakeUs = retryUs;
         Serial.printf("[DEEPSLEEP]: State not published, retrying in %llu s\n",
                       (unsigned long long)(timerWakeUs / 1000000ULL));
     }
@@ -151,7 +154,7 @@ void setup()
     else if (wakeReason == ESP_SLEEP_WAKEUP_TIMER)
     {
         // Woke up from timer (retry)
-        Serial.println("[WAKE]: Woke up from timer (retry)");
+        Serial.println("[WAKE]: Woke up from timer (retry or heartbeat)");
         ok = reportState(doorOpened); // Report current state of door
     }
     else
