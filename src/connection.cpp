@@ -68,9 +68,20 @@ static bool connectMQTT(const char *broker, int port, const char *clientId, cons
 {
     Serial.println("[NET]: Connecting to MQTT broker...");
 
+    // Set the MQTT server and port for the client to connect to
     mqttClient.setServer(broker, port);
 
+    // Set the buffer size for the MQTT client to accommodate the payloads
+    if (!mqttClient.setBufferSize(PAYLOAD_BUFFER_SIZE))
+    {
+        Serial.println("[NET]: Failed to allocate MQTT buffer");
+        return false;
+    }
+
+    // Set the socket timeout for the MQTT client (in seconds)
     mqttClient.setSocketTimeout(MQTT_SOCKET_TIMEOUT_S);
+
+    // Attempt to connect to the MQTT broker within the specified connection timeout
     unsigned long start = millis();
     while (!mqttClient.connected() && (millis() - start) < MQTT_CONNECTION_TIMEOUT_MS)
     {
@@ -78,13 +89,12 @@ static bool connectMQTT(const char *broker, int port, const char *clientId, cons
         delay(MQTT_POLL_INTERVAL_MS);
     }
 
+    // Check if the MQTT client successfully connected to the broker
     bool connected = mqttClient.connected();
-
     if (!connected)
         Serial.println("[NET]: MQTT connection failed");
     else
         Serial.println("[NET]: MQTT connection successful");
-
     return connected;
 }
 
