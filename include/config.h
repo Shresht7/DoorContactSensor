@@ -8,6 +8,15 @@
 // DEFINITIONS
 // ===========
 
+// DEVICE
+// ------
+
+// The human-readable name of the device
+constexpr const char *DEVICE_NAME = "Door Contact Sensor";
+
+// The unique identifier for the device
+constexpr const char *DEVICE_ID = "door-contact-sensor-prototype";
+
 // FIRMWARE
 // --------
 
@@ -79,12 +88,6 @@ constexpr unsigned int MQTT_POLL_INTERVAL_MS = 100;
 // Space between MQTT connection attempts (in milliseconds)
 constexpr unsigned int MQTT_SPACE_MS = 100;
 
-// PAYLOAD
-// -------
-
-// Size of the buffer used for storing MQTT payloads (in bytes)
-constexpr size_t PAYLOAD_BUFFER_SIZE = 192;
-
 // EXPONENTIAL BACKOFF
 // -------------------
 
@@ -102,5 +105,23 @@ constexpr uint64_t HEARTBEAT_INTERVAL_US = (8ULL * 60 * 60 * 1000 * 1000);
 
 // Maximum time the device can stay awake before forcing deep sleep (in milliseconds)
 constexpr unsigned int MAX_AWAKE_TIME_MS = 60000;
+
+// HOME ASSISTANT DISCOVERY
+// ------------------------
+
+// The prefix used for Home Assistant discovery
+constexpr const char *DISCOVERY_PREFIX = "homeassistant";
+
+// Time after which the door state is considered expired (in seconds)
+constexpr uint32_t DOOR_EXPIRE_AFTER_S = (uint32_t)((HEARTBEAT_INTERVAL_US / 1000000ULL) * 2.5);
+
+// Size of the buffer used for Home Assistant discovery messages (in bytes)
+constexpr size_t DISCOVERY_BUFFER_SIZE = 1536;
+
+// PAYLOAD
+// -------
+
+// Size of the buffer used for storing MQTT payloads (in bytes)
+constexpr size_t PAYLOAD_BUFFER_SIZE = DISCOVERY_BUFFER_SIZE + 128;
 
 #endif // CONFIG_H

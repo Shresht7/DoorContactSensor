@@ -7,6 +7,7 @@
 #include "connection.h"
 #include "payload.h"
 #include "deepsleep.h"
+#include "discovery.h"
 #include "helpers.h"
 #include "config.h"
 
@@ -87,7 +88,6 @@ bool reportState(bool doorOpened)
 void goToSleep(bool currentlyOpen)
 {
 #ifdef STAY_AWAKE
-    Serial.println("[DEV]: STAYING AWAKE!");
     return;
 #else
     // Always wake periodically to publish heartbeat
@@ -112,6 +112,40 @@ void goToSleep(bool currentlyOpen)
     // Setup wake triggers and enter deep sleep
     enterDeepSleep(currentlyOpen, timerWakeUs);
 #endif
+}
+
+// DISCOVERY
+// ---------
+
+/// @brief Announces the sensor to Home Assistant.
+
+static void publishDiscovery()
+{
+    char topic[96];
+    char payload[PAYLOAD_BUFFER_SIZE];
+
+    DiscoveryInfo info = {
+        DEVICE_ID,
+        DEVICE_NAME,
+        MQTT_TOPIC,
+        FIRMWARE_VERSION,
+        DOOR_EXPIRE_AFTER_S};
+
+    if (buildDiscoveryTopic(topic, sizeof(topic), DISCOVERY_PREFIX, DEVICE_ID) == 0)
+    {
+        Serial.println("[DISCOVERY]: Failed to construct Discovery Topic");
+        return;
+    }
+
+    if (buildDiscoveryPayload(payload, sizeof(payload), info) == 0)
+    {
+        Serial.println("[DISCOVERY]: Failed to construct Discovery Payload");
+        return;
+    }
+
+    bool retained = true;
+    bool ok = publish(topic, payload, retained);
+    Serial.printf("[DISCOVERY]: Discovery Published (success: %d)\n", ok);
 }
 
 // -----
@@ -183,13 +217,19 @@ void setup()
     {
         // Woke up from timer (retry)
         Serial.println("[WAKE]: Woke up from timer (retry or heartbeat)");
-        ok = reportState(doorOpened); // Report current state of door
+        bool online = connectNetwork();
+        if (online)
+            publishDiscovery();
+        ok = online && reportState(doorOpened); // Report current state of door
     }
     else
     {
         // Woke up from other reasons (e.g., power-on reset)
         Serial.println("[WAKE]: First Boot!");
-        ok = reportState(doorOpened); // Report initial state
+        bool online = connectNetwork();
+        if (online)
+            publishDiscovery();
+        ok = online && reportState(doorOpened); // Report current state of door
     }
 
     // The publish above counts as activity: start the quiet window from now,
