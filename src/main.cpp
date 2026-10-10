@@ -18,6 +18,21 @@
 
 #define FIRMWARE_UPDATE_GRACE_PERIOD 10000
 
+#define HOLD_MS 250   // Minimum time the door state must remain unchanged before considering it stable
+#define STEADY_MS 500 // Minimum time the door state must remain steady before considering deep sleep
+
+// STATE
+// -----
+
+// Variables marked RTC_DATA_ATTR survive deep sleep (but reset on power cycle)
+RTC_DATA_ATTR uint32_t wakeCount = 0;
+RTC_DATA_ATTR int lastKnownState = -1; // -1 marks no previous state yet
+
+bool lastDoorState;
+unsigned long lastStateChangeTime = 0;
+int lastPublishedState = -1;
+unsigned long lastPublishTime = -1;
+
 // WiFi AND MQTT CONFIGURATION
 // ---------------------------
 
@@ -91,22 +106,16 @@ void publishState(bool doorOpened)
 
     bool ok = mqttClient.publish(MQTT_TOPIC, payload.c_str(), true);
     mqttClient.loop(); // Ensure the MQTT client processes the publish request
-    delay(100);        // Give the MQTT client time to send the message
+    delay(50);         // Give the MQTT client time to send the message
+
+    if (ok)
+    {
+        lastPublishedState = doorOpened;
+        lastPublishTime = millis();
+    }
 
     Serial.println("[NET]: State published: " + String(doorOpened ? "OPEN" : "CLOSED") + " (success: " + String(ok) + ")");
 }
-
-// STATE
-// -----
-
-// Variables marked RTC_DATA_ATTR survive deep sleep (but reset on power cycle)
-RTC_DATA_ATTR uint32_t wakeCount = 0;
-RTC_DATA_ATTR int lastKnownState = -1; // -1 marks no previous state yet
-
-#ifdef STAY_AWAKE
-// Last known state of the door in stay awake mode
-bool lastDoorState;
-#endif
 
 // FUNCTIONS
 // ---------
@@ -221,8 +230,8 @@ void setup()
         reportState(doorOpened); // Report initial state
     }
 
-    // Go to deep sleep, waiting for the door state to change...
-    goToSleep(doorOpened);
+    // // Go to deep sleep, waiting for the door state to change...
+    // goToSleep(doorOpened);
 }
 
 // ----
@@ -232,18 +241,22 @@ void setup()
 /// @brief Runs indefinitely after setup() has completed
 void loop()
 {
-    // Nothing to do in normal deep sleep mode
-#ifdef STAY_AWAKE
-    // Stay awake mode: continuously monitor the door sensor
+    // Read the current state of the door sensor
     bool doorOpened = digitalRead(MAG_REED_SENSOR);
     if (doorOpened != lastDoorState)
     {
         lastDoorState = doorOpened;
-        reportState(doorOpened);
+        lastStateChangeTime = millis();
     }
+    // Check if the door has been stable for the hold time
+    if ((millis() - lastStateChangeTime) > HOLD_MS && doorOpened != lastPublishedState)
+        publishState(doorOpened);
 
+    // Update the last publish time if the door state has changed
     mqttClient.loop();
-
     delay(50);
-#endif
+
+    // Check if the door has been in a steady state for long enough to go to sleep
+    if ((millis() - lastStateChangeTime) > STEADY_MS && doorOpened == lastPublishedState)
+        goToSleep(doorOpened);
 }
