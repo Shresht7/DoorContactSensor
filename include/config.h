@@ -8,11 +8,26 @@
 // DEFINITIONS
 // ===========
 
+// DEVICE
+// ------
+
+// The human-readable name of the device
+constexpr const char *DEVICE_NAME = "Door Contact Sensor";
+
+// The unique identifier for the device
+constexpr const char *DEVICE_ID = "door-contact-sensor-prototype";
+
 // FIRMWARE
 // --------
 
 /// The current firmware version of the device
 constexpr const char *FIRMWARE_VERSION = "0.1.0";
+
+// HOME ASSISTANT DISCOVERY
+// ------------------------
+
+// The prefix used for Home Assistant discovery
+constexpr const char *DISCOVERY_PREFIX = "homeassistant";
 
 // SERIAL COMMUNICATION
 // --------------------
