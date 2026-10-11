@@ -94,8 +94,8 @@ bool connectMQTT(const IPAddress broker, const int port, const char *clientId, c
     // Set the MQTT server and port for the client to connect to
     mqttClient.setServer(broker, port);
 
-    // Set the buffer size for the MQTT client to accommodate the payloads
-    if (!mqttClient.setBufferSize(PAYLOAD_BUFFER_SIZE))
+    // Set the MQTT packet buffer size to accomodate the largest payload and packet overhead
+    if (!mqttClient.setBufferSize(MQTT_BUFFER_SIZE))
     {
         Serial.println("[NET]: Failed to allocate MQTT buffer");
         return false;

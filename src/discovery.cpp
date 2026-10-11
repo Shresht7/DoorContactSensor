@@ -39,6 +39,9 @@ struct Token
 /// @return The number of characters written to the buffer, or 0 if an error occurred (e.g., not enough space or missing token).
 static size_t fillTemplate(char *buffer, size_t size, const char *tmpl, const Token *tokens, size_t tokenCount)
 {
+    if (size == 0)
+        return 0;
+
     size_t n = 0;
     for (const char *p = tmpl; *p;)
     {
@@ -51,8 +54,8 @@ static size_t fillTemplate(char *buffer, size_t size, const char *tmpl, const To
                 if (strncmp(p, tokens[i].key, keyLen) != 0)
                     continue;
                 size_t valueLen = strlen(tokens[i].value);
-                if (n + valueLen > size)
-                    return 0; // Not enough space in the buffer to insert the value
+                if (valueLen >= size - n)
+                    return 0; // Not enough space for the value and null terminator
                 memcpy(buffer + n, tokens[i].value, valueLen);
                 n += valueLen;
                 p += keyLen;
@@ -63,8 +66,8 @@ static size_t fillTemplate(char *buffer, size_t size, const char *tmpl, const To
         }
         else
         {
-            if (n + 1 > size)
-                return 0; // Not enough space in the buffer to insert the character
+            if (1 >= size - n)
+                return 0; // Not enough space for the character and null terminator
             buffer[n++] = *p++;
         }
     }

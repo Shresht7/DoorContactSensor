@@ -119,14 +119,14 @@ constexpr const char *DISCOVERY_PREFIX = "homeassistant";
 // Time after which the door state is considered expired (in seconds)
 constexpr uint32_t DOOR_EXPIRE_AFTER_S = (uint32_t)((HEARTBEAT_INTERVAL_US / 1000000ULL) * 2.5);
 
-// Size of the buffer used for Home Assistant discovery messages (in bytes)
-constexpr size_t DISCOVERY_BUFFER_SIZE = 2560;
+// Size of the buffer used for the Home Assistant discovery JSON payload (in bytes)
+constexpr size_t DISCOVERY_PAYLOAD_BUFFER_SIZE = 2560;
 
-// PAYLOAD
-// -------
+// Size of the buffer used for status report JSON payloads (in bytes)
+constexpr size_t STATUS_PAYLOAD_BUFFER_SIZE = 512;
 
-// Size of the buffer used for storing MQTT payloads (in bytes)
-constexpr size_t PAYLOAD_BUFFER_SIZE = DISCOVERY_BUFFER_SIZE + 256;
+// MQTT client buffer size, including packet framing and topic overhead (in bytes)
+constexpr size_t MQTT_BUFFER_SIZE = DISCOVERY_PAYLOAD_BUFFER_SIZE + 256;
 
 // OTA (Over-the-Air) UPDATE
 // -------------------------

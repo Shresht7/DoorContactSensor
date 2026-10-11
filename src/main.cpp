@@ -70,7 +70,7 @@ bool publishState(bool doorOpened)
     };
 
     // Construct the JSON payload
-    char payload[PAYLOAD_BUFFER_SIZE];
+    char payload[STATUS_PAYLOAD_BUFFER_SIZE];
     if (buildStatusReportPayload(payload, sizeof(payload), report) == 0)
     {
         Serial.println("[NET]: Payload too large for buffer, not publishing");
@@ -144,7 +144,7 @@ void goToSleep(bool currentlyOpen)
 static void publishDiscovery()
 {
     char topic[96];
-    char payload[PAYLOAD_BUFFER_SIZE];
+    char payload[DISCOVERY_PAYLOAD_BUFFER_SIZE];
 
     DiscoveryInfo info = {
         deviceId(),
