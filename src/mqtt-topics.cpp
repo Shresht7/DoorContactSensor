@@ -41,7 +41,7 @@ void mqttTopicsInit()
 
     const bool stateOk = buildTopic(stateTopicValue, sizeof(stateTopicValue), "state");
     const bool cmdOk = buildTopic(cmdTopicValue, sizeof(cmdTopicValue), "cmd");
-    const bool stayAwakeOk = buildTopic(stayAwakeTopicValue, sizeof(stayAwakeTopicValue), "stayAwake");
+    const bool stayAwakeOk = buildTopic(stayAwakeTopicValue, sizeof(stayAwakeTopicValue), "stay-awake");
 
     initialized = stateOk && cmdOk && stayAwakeOk;
 
