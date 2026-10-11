@@ -132,4 +132,10 @@ constexpr size_t DISCOVERY_BUFFER_SIZE = 2048;
 // Size of the buffer used for storing MQTT payloads (in bytes)
 constexpr size_t PAYLOAD_BUFFER_SIZE = DISCOVERY_BUFFER_SIZE + 256;
 
+// OTA (Over-the-Air) UPDATE
+// -------------------------
+
+// Port for OTA (Over-the-Air) updates
+constexpr const uint16_t OTA_PORT = 3232;
+
 #endif // CONFIG_H
