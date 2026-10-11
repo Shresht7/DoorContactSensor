@@ -16,9 +16,12 @@ static const char DISCOVERY_PAYLOAD_TEMPLATE[] = R"json({
 "awake":{"p":"sensor","unique_id":"@ID@_awake","name":"Awake Time","device_class":"duration","unit_of_measurement":"ms","state_class":"measurement","entity_category":"diagnostic","value_template":"{{ value_json.awake_ms }}"},
 "failed":{"p":"sensor","unique_id":"@ID@_failed","name":"Failed Publishes","state_class":"measurement","entity_category":"diagnostic","value_template":"{{ value_json.failed }}"},
 "wakes":{"p":"sensor","unique_id":"@ID@_wakes","name":"Wake Count","state_class":"total_increasing","entity_category":"diagnostic","value_template":"{{ value_json.wake_count }}"},
-"wake":{"p":"sensor","unique_id":"@ID@_wake","name":"Wake Reason","entity_category":"diagnostic","value_template":"{{ value_json.wake }}"}
-}
-})json";
+"wake":{"p":"sensor","unique_id":"@ID@_wake","name":"Wake Reason","entity_category":"diagnostic","value_template":"{{ value_json.wake }}"},
+"wifi_ms":{"p":"sensor","unique_id":"@ID@_wifi_ms","name":"WiFi Connect Time","device_class":"duration","unit_of_measurement":"ms","state_class":"measurement","entity_category":"diagnostic","value_template":"{{ value_json.wifi_ms }}"},
+"mqtt_ms":{"p":"sensor","unique_id":"@ID@_mqtt_ms","name":"MQTT Connect Time","device_class":"duration","unit_of_measurement":"ms","state_class":"measurement","entity_category":"diagnostic","value_template":"{{ value_json.mqtt_ms }}"},
+"report_ms":{"p":"sensor","unique_id":"@ID@_report_ms","name":"Report Time","device_class":"duration","unit_of_measurement":"ms","state_class":"measurement","entity_category":"diagnostic","value_template":"{{ value_json.report_ms }}"},
+"stayawake":{"p":"switch","unique_id":"@ID@_stay_awake","name":"Stay Awake","command_topic":"@CMD@","state_topic":"@SW@","payload_on":"ON","payload_off":"OFF","state_on":"ON","state_off":"OFF"}
+}})json";
 
 /// @brief Structure representing a token for template substitution.
 struct Token
@@ -86,7 +89,10 @@ size_t buildDiscoveryPayload(char *buffer, size_t size, const DiscoveryInfo &inf
         {"@NAME@", info.deviceName},
         {"@TOPIC@", info.stateTopic},
         {"@FW@", info.firmware},
-        {"@EXPIRE@", expire}};
+        {"@EXPIRE@", expire},
+        {"@CMD@", info.cmdTopic},
+        {"@SW@", info.stayAwakeTopic},
+    };
     size_t n = fillTemplate(buffer, size, DISCOVERY_PAYLOAD_TEMPLATE, tokens, sizeof(tokens) / sizeof(tokens[0]));
 
     if (n == 0 && size > 0)

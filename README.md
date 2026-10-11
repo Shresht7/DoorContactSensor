@@ -21,11 +21,11 @@ Battery-powered door contact sensor firmware for the ESP32-C3 Super Mini. Publis
 
 PlatformIO environments:
 
-| Env       | Purpose                            |
-| --------- | ---------------------------------- |
-| `release` | Production build (deep sleep on)   |
-| `debug`   | Serial over USB, no deep sleep     |
-| `dev`     | Debug + stays awake (`STAY_AWAKE`) |
+| Env       | Purpose                          |
+| --------- | -------------------------------- |
+| `release` | Production build (deep sleep on) |
+| `debug`   | Serial over USB, no deep sleep   |
+| `dev`     | Debug + stays awake by default   |
 
 ### Development
 

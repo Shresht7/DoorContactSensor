@@ -18,6 +18,12 @@ static WiFiClient wifiClient;
 // The MQTT client instance used to communicate with the MQTT broker
 static PubSubClient mqttClient(wifiClient);
 
+/// Duration of the most recent WiFi connect attempt in ms
+static uint32_t lastWiFiConnectMs = 0;
+
+/// Duration of the most recent MQTT connect attempt in ms
+static uint32_t lastMQTTConnectMs = 0;
+
 // CONNECT WIFI
 // ------------
 
@@ -29,6 +35,9 @@ bool isWiFiConnected()
 bool connectWiFi(const char *ssid, const char *password)
 {
     Serial.println("[NET]: Connecting to WiFi...");
+    unsigned long start = millis();
+
+    // Set the WiFi mode to station (client) mode
     WiFi.mode(WIFI_STA);
 
     // Configure the static IP address, if provided
@@ -38,12 +47,17 @@ bool connectWiFi(const char *ssid, const char *password)
     WiFi.config(STATIC_IP_ADDRESS);
 #endif
 
+    // Initiate the WiFi connection with the provided SSID and password
     WiFi.begin(ssid, password);
 
-    unsigned long start = millis();
+    // Wait for the WiFi connection to be established or the timeout to expire
     while (!isWiFiConnected() && (millis() - start) < WIFI_CONNECT_TIMEOUT_MS)
         delay(WIFI_POLL_INTERVAL_MS);
 
+    // Record how long the WiFi connect attempt took (for telemetry)
+    lastWiFiConnectMs = (uint32_t)(millis() - start);
+
+    // Check if the WiFi connection was successful and print the result
     if (!isWiFiConnected())
     {
         Serial.println("[NET]: WiFi connection failed");
@@ -56,6 +70,7 @@ bool connectWiFi(const char *ssid, const char *password)
 
 int getRSSI()
 {
+
     if (!isWiFiConnected())
         return 0;
     return WiFi.RSSI();
@@ -67,6 +82,7 @@ int getRSSI()
 bool connectMQTT(const char *broker, int port, const char *clientId, const char *username, const char *password)
 {
     Serial.println("[NET]: Connecting to MQTT broker...");
+    unsigned long start = millis();
 
     // Set the MQTT server and port for the client to connect to
     mqttClient.setServer(broker, port);
@@ -81,13 +97,18 @@ bool connectMQTT(const char *broker, int port, const char *clientId, const char 
     // Set the socket timeout for the MQTT client (in seconds)
     mqttClient.setSocketTimeout(MQTT_SOCKET_TIMEOUT_S);
 
+    // Set the callback function for incoming MQTT messages
+    mqttClient.setCallback(onMqttMessage);
+
     // Attempt to connect to the MQTT broker within the specified connection timeout
-    unsigned long start = millis();
     while (!mqttClient.connected() && (millis() - start) < MQTT_CONNECTION_TIMEOUT_MS)
     {
         mqttClient.connect(clientId, username, password);
         delay(MQTT_POLL_INTERVAL_MS);
     }
+
+    // Record how long the MQTT connect attempt took (for telemetry)
+    lastMQTTConnectMs = (uint32_t)(millis() - start);
 
     // Check if the MQTT client successfully connected to the broker
     bool connected = mqttClient.connected();
@@ -95,6 +116,14 @@ bool connectMQTT(const char *broker, int port, const char *clientId, const char 
         Serial.println("[NET]: MQTT connection failed");
     else
         Serial.println("[NET]: MQTT connection successful");
+
+    // Subscribe to the command topic if the connection was successful
+    if (connected)
+    {
+        mqttClient.subscribe(MQTT_CMD_TOPIC);
+        Serial.println("[NET]: Subscribed to MQTT " + String(MQTT_CMD_TOPIC));
+    }
+
     return connected;
 }
 
@@ -104,6 +133,16 @@ bool connectMQTT(const char *broker, int port, const char *clientId, const char 
 bool isConnected()
 {
     return mqttClient.connected();
+}
+
+uint32_t getLastWiFiConnectMs()
+{
+    return lastWiFiConnectMs;
+}
+
+uint32_t getLastMQTTConnectMs()
+{
+    return lastMQTTConnectMs;
 }
 
 bool connectNetwork()
@@ -125,6 +164,26 @@ bool connectNetwork()
         return false;
 
     return true;
+}
+
+// SUBSCRIBE
+// ---------
+
+/// @brief The callback function to handle incoming MQTT messages
+static MqttMessageCallback messageCallback = nullptr;
+
+/// @brief Registers the handler for subscribed MQTT messages
+/// @param callback The callback function to handle incoming MQTT messages
+void setMqttMessageCallback(MqttMessageCallback callback)
+{
+    messageCallback = callback;
+}
+
+/// Delegates incoming MQTT messages to the registered callback function
+void onMqttMessage(char *topic, uint8_t *payload, unsigned int length)
+{
+    if (messageCallback)
+        messageCallback(topic, payload, length);
 }
 
 // PUBLISH

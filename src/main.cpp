@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "esp_sleep.h"
+#include "string.h"
 
 #include "connection.h"
 #include "payload.h"
@@ -21,6 +22,13 @@ RTC_DATA_ATTR int lastKnownState = -1; // -1 marks no previous state yet
 
 // Counts consecutive failures; reset when a publish succeeds.
 RTC_DATA_ATTR uint8_t failedPublishes = 0;
+
+// Stay awake instead of deep sleeping. Preseeded from env default;
+// survives deep sleep; resets on power cycle; toggleable via MQTT
+RTC_DATA_ATTR bool stayAwake = STAY_AWAKE_INITIAL;
+
+// Set when stayAwake changed this wake cycle, so loop() can publish the switch state
+static bool stayAwakeDirty = false;
 
 bool lastDoorState;
 int lastPublishedState = -1;
@@ -49,6 +57,9 @@ bool publishState(bool doorOpened)
         wakeCount : wakeCount,
         failedPublishes : failedPublishes,
         awakeMs : (uint32_t)millis(),
+        wifiMs : getLastWiFiConnectMs(),
+        mqttMs : getLastMQTTConnectMs(),
+        reportMs : (uint32_t)millis(),
         firmwareVersion : FIRMWARE_VERSION
     };
 
@@ -89,9 +100,10 @@ bool reportState(bool doorOpened)
 /// @param currentlyOpen True if the door is currently open, false if closed
 void goToSleep(bool currentlyOpen)
 {
-#ifdef STAY_AWAKE
-    return;
-#else
+    // Return early if the device is set to stay awake
+    if (stayAwake)
+        return;
+
     // Turn off the indicator LED before going to deep sleep
     indicatorOff();
 
@@ -116,7 +128,6 @@ void goToSleep(bool currentlyOpen)
 
     // Setup wake triggers and enter deep sleep
     enterDeepSleep(currentlyOpen, timerWakeUs);
-#endif
 }
 
 // DISCOVERY
@@ -134,7 +145,9 @@ static void publishDiscovery()
         DEVICE_NAME,
         MQTT_TOPIC,
         FIRMWARE_VERSION,
-        DOOR_EXPIRE_AFTER_S};
+        DOOR_EXPIRE_AFTER_S,
+        MQTT_CMD_TOPIC,
+        MQTT_STAY_AWAKE_TOPIC};
 
     if (buildDiscoveryTopic(topic, sizeof(topic), DISCOVERY_PREFIX, DEVICE_ID) == 0)
     {
@@ -153,6 +166,25 @@ static void publishDiscovery()
     Serial.printf("[DISCOVERY]: Discovery Published (success: %d)\n", ok);
 }
 
+static void onMqttMessage(const char *topic, const uint8_t *payload, unsigned int length)
+{
+    if (strncmp(topic, MQTT_CMD_TOPIC, strlen(MQTT_CMD_TOPIC)) != 0)
+        return;
+    char value[4] = {0};
+    size_t n = (length < sizeof(value) - 1) ? length : sizeof(value) - 1;
+    memcpy(value, payload, n);
+
+    bool newState = (strncmp(value, "1", 1) == 0);
+    if (newState != (bool)lastKnownState)
+    {
+        stayAwake = newState;
+        stayAwakeDirty = true;
+        indicatorPulse(BLINK_MS);
+    }
+
+    Serial.printf("[CMD]: Stay Awake -> %s\n", newState ? "ON" : "OFF");
+}
+
 // -----
 // SETUP
 // -----
@@ -165,6 +197,10 @@ void setup()
 
     // Initialize serial communication
     Serial.begin(BAUD_RATE);
+    Serial.println("[BOOT]: Starting up...");
+
+    // Register the MQTT message callback
+    setMqttMessageCallback(onMqttMessage);
 
 #if defined(DEBUG) && !defined(STAY_AWAKE)
     // give the host time to reattach to the USB port
@@ -173,8 +209,6 @@ void setup()
 
     // Configure the pins for the LED and magnetic reed sensor
     pinMode(PIN_MAG_REED_SENSOR, INPUT_PULLUP);
-
-    Serial.println("[BOOT]: Starting up...");
 
     // Read the current state of the door sensor (1 = open / no magnet, 0 = closed / magnet)
     bool doorOpened = digitalRead(PIN_MAG_REED_SENSOR);
@@ -210,7 +244,10 @@ void setup()
         Serial.println("[WAKE]: Woke up from timer (retry or heartbeat)");
         bool online = connectNetwork();
         if (online)
+        {
             publishDiscovery();
+            publish(MQTT_STAY_AWAKE_TOPIC, stayAwake ? "ON" : "OFF", true);
+        }
         ok = online && reportState(doorOpened); // Report current state of door
     }
     else
@@ -219,7 +256,10 @@ void setup()
         Serial.println("[WAKE]: First Boot!");
         bool online = connectNetwork();
         if (online)
+        {
             publishDiscovery();
+            publish(MQTT_STAY_AWAKE_TOPIC, stayAwake ? "ON" : "OFF", true);
+        }
         ok = online && reportState(doorOpened); // Report current state of door
     }
 
@@ -257,6 +297,13 @@ void loop()
 
     // Allow the network client to process any pending messages
     networkLoop();
+
+    // If the stay-awake state has changed, publish the new state
+    if (stayAwakeDirty)
+    {
+        stayAwakeDirty = false;
+        publish(MQTT_STAY_AWAKE_TOPIC, stayAwake ? "ON" : "OFF", true);
+    }
 
     // Check if the door has been in a steady state for long enough to go to sleep
     if ((millis() - lastActivityTime) > DOOR_SETTLE_TIME_MS && doorOpened == lastPublishedState)
