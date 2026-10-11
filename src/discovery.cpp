@@ -20,7 +20,7 @@ static const char DISCOVERY_PAYLOAD_TEMPLATE[] = R"json({
 "wifi_ms":{"p":"sensor","unique_id":"@ID@_wifi_ms","name":"WiFi Connect Time","device_class":"duration","unit_of_measurement":"ms","state_class":"measurement","entity_category":"diagnostic","value_template":"{{ value_json.wifi_ms }}"},
 "mqtt_ms":{"p":"sensor","unique_id":"@ID@_mqtt_ms","name":"MQTT Connect Time","device_class":"duration","unit_of_measurement":"ms","state_class":"measurement","entity_category":"diagnostic","value_template":"{{ value_json.mqtt_ms }}"},
 "report_ms":{"p":"sensor","unique_id":"@ID@_report_ms","name":"Report Time","device_class":"duration","unit_of_measurement":"ms","state_class":"measurement","entity_category":"diagnostic","value_template":"{{ value_json.report_ms }}"},
-"stayawake":{"p":"switch","unique_id":"@ID@_stay_awake","name":"Stay Awake","command_topic":"@CMD@","state_topic":"@SW@","payload_on":"ON","payload_off":"OFF","state_on":"ON","state_off":"OFF"}
+"stayawake":{"p":"switch","unique_id":"@ID@_stay_awake","name":"Stay Awake","command_topic":"@CMD@","state_topic":"@SW@","payload_on":"ON","payload_off":"OFF","state_on":"ON","state_off":"OFF","retain":true}
 }})json";
 
 /// @brief Structure representing a token for template substitution.

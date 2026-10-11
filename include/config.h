@@ -114,6 +114,9 @@ constexpr uint64_t HEARTBEAT_INTERVAL_US = (8ULL * 60 * 60 * 1000 * 1000);
 // Maximum time the device can stay awake before forcing deep sleep (in milliseconds)
 constexpr unsigned int MAX_AWAKE_TIME_MS = 60000;
 
+// Idle timeout for staying awake (in milliseconds)
+constexpr unsigned int STAY_AWAKE_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+
 // HOME ASSISTANT DISCOVERY
 // ------------------------
 
@@ -124,12 +127,18 @@ constexpr const char *DISCOVERY_PREFIX = "homeassistant";
 constexpr uint32_t DOOR_EXPIRE_AFTER_S = (uint32_t)((HEARTBEAT_INTERVAL_US / 1000000ULL) * 2);
 
 // Size of the buffer used for Home Assistant discovery messages (in bytes)
-constexpr size_t DISCOVERY_BUFFER_SIZE = 2048;
+constexpr size_t DISCOVERY_BUFFER_SIZE = 2560;
 
 // PAYLOAD
 // -------
 
 // Size of the buffer used for storing MQTT payloads (in bytes)
 constexpr size_t PAYLOAD_BUFFER_SIZE = DISCOVERY_BUFFER_SIZE + 256;
+
+// OTA (Over-the-Air) UPDATE
+// -------------------------
+
+// Port for OTA (Over-the-Air) updates
+constexpr const uint16_t OTA_PORT = 3232;
 
 #endif // CONFIG_H

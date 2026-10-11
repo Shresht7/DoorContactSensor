@@ -35,7 +35,7 @@ int getRSSI();
 /// @param username The username for the MQTT connection
 /// @param password The password for the MQTT connection
 /// @return True if the connection is successful, false otherwise
-bool connectMQTT(const char *broker, int port, const char *clientId, const char *username, const char *password);
+bool connectMQTT(const IPAddress broker, int port, const char *clientId, const char *username, const char *password);
 
 /// @brief Connects to the WiFi network and MQTT broker
 /// @return True if both WiFi and MQTT connections are successful, false otherwise

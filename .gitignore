@@ -8,3 +8,7 @@
 secrets.h
 include/secrets.h
 *.env
+platformio_secrets.ini
+platformio_secret.ini
+secrets.ini
+secret.ini

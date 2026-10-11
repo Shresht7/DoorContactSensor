@@ -9,6 +9,7 @@
 #include "payload.h"
 #include "deepsleep.h"
 #include "discovery.h"
+#include "ota.h"
 #include "indicator.h"
 #include "helpers.h"
 #include "config.h"
@@ -33,6 +34,9 @@ static bool stayAwakeDirty = false;
 bool lastDoorState;
 int lastPublishedState = -1;
 unsigned long lastActivityTime = 0;
+
+/// @brief Indicates whether the OTA (Over-the-Air) update service has been started
+static bool otaStarted = false;
 
 // Why the device woke up this cycle
 static WakeReason wakeReason = WakeReason::WAKE_REASON_BOOT;
@@ -100,8 +104,8 @@ bool reportState(bool doorOpened)
 /// @param currentlyOpen True if the door is currently open, false if closed
 void goToSleep(bool currentlyOpen)
 {
-    // Return early if the device is set to stay awake
-    if (stayAwake)
+    // Return early if the device is set to stay awake or an OTA update is in progress
+    if (stayAwake || otaInProgress())
         return;
 
     // Turn off the indicator LED before going to deep sleep
@@ -174,13 +178,14 @@ static void onMqttMessage(const char *topic, const uint8_t *payload, unsigned in
     size_t n = (length < sizeof(value) - 1) ? length : sizeof(value) - 1;
     memcpy(value, payload, n);
 
-    bool newState = (strncmp(value, "1", 1) == 0);
-    if (newState != (bool)lastKnownState)
+    bool newState = (strncmp(value, "ON", 2) == 0 || strncmp(value, "1", 1) == 0);
+    if (newState != stayAwake)
     {
         stayAwake = newState;
         stayAwakeDirty = true;
         indicatorPulse(BLINK_MS);
     }
+    lastActivityTime = millis(); // Update the last activity time whenever a command is received
 
     Serial.printf("[CMD]: Stay Awake -> %s\n", newState ? "ON" : "OFF");
 }
@@ -237,6 +242,17 @@ void setup()
         // Woke up from external wakeup (door sensor)
         Serial.println("[WAKE]: Woke up from external wakeup (door sensor)");
         ok = reportState(doorOpened); // Report current state of door
+        networkLoop();                // Process any retained command delivered on connect
+        if (stayAwake)
+        {
+            stayAwakeDirty = true;       // Mark the stay-awake state as dirty to trigger publishing
+            lastActivityTime = millis(); // Update the last activity time to now
+        }
+        if (stayAwakeDirty)
+        {
+            stayAwakeDirty = false;                                         // Clear the dirty flag after handling it
+            publish(MQTT_STAY_AWAKE_TOPIC, stayAwake ? "ON" : "OFF", true); // Publish the updated stay-awake state
+        }
     }
     else if (wakeCause == ESP_SLEEP_WAKEUP_TIMER)
     {
@@ -305,12 +321,35 @@ void loop()
         publish(MQTT_STAY_AWAKE_TOPIC, stayAwake ? "ON" : "OFF", true);
     }
 
+    // Serve OTA requests while awake and connected
+    if (isWiFiConnected())
+    {
+        if (!otaStarted)
+        {
+            otaBegin();
+            otaStarted = true;
+        }
+        otaUpdate();
+    }
+    else
+    {
+        otaStarted = false;
+    }
+
+    // Check if the device should stop staying awake due to idle timeout
+    if (stayAwake && !otaInProgress() && (millis() - lastActivityTime) > STAY_AWAKE_IDLE_TIMEOUT_MS)
+    {
+        stayAwake = false;                 // Stop staying awake due to idle timeout
+        stayAwakeDirty = true;             // Mark the stay-awake state as dirty to trigger publishing
+        publish(MQTT_CMD_TOPIC, "", true); // Clear the retained command in idle auto-off so it can't rearm automatically
+    }
+
     // Check if the door has been in a steady state for long enough to go to sleep
-    if ((millis() - lastActivityTime) > DOOR_SETTLE_TIME_MS && doorOpened == lastPublishedState)
+    if (!stayAwake && (millis() - lastActivityTime) > DOOR_SETTLE_TIME_MS && doorOpened == lastPublishedState)
         goToSleep(doorOpened);
 
     // Force deep sleep if the device has been awake for too long
-    if (millis() > MAX_AWAKE_TIME_MS)
+    if (!stayAwake && millis() > MAX_AWAKE_TIME_MS)
         goToSleep(doorOpened);
 
     // Throttle the loop to avoid busy-waiting
