@@ -174,7 +174,7 @@ static void publishDiscovery()
 
 static void onMqttMessage(const char *topic, const uint8_t *payload, unsigned int length)
 {
-    if (strncmp(topic, mqttTopicCmd(), strlen(mqttTopicCmd())) != 0)
+    if (strcmp(topic, mqttTopicCmd()) != 0)
         return;
     char value[4] = {0};
     size_t n = (length < sizeof(value) - 1) ? length : sizeof(value) - 1;
