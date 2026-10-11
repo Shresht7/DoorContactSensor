@@ -97,6 +97,16 @@ constexpr uint64_t RETRY_BASE_US = (60ULL * 1000 * 1000);
 // DEEP SLEEP
 // ----------
 
+// Initial value of the stay-awake flag. Set to 1 via build flag (dev env);
+// 0 lets RTC_DATA_ATTR preseed on normal boots;
+#ifndef STAY_AWAKE_INITIAL
+#define STAY_AWAKE_INITIAL 0
+#endif
+
+// MQTT topics for stay-awake switch
+constexpr const char *MQTT_CMD_TOPIC = "door-sensor/cmd";
+constexpr const char *MQTT_STAY_AWAKE_TOPIC = "door-sensor/stay-awake";
+
 // Wake this often even if the door hasn't moved, and publish the current state,
 // so Home Assistant can tell "closed and fine" apart from "dead battery"
 constexpr uint64_t HEARTBEAT_INTERVAL_US = (8ULL * 60 * 60 * 1000 * 1000);
@@ -114,12 +124,12 @@ constexpr const char *DISCOVERY_PREFIX = "homeassistant";
 constexpr uint32_t DOOR_EXPIRE_AFTER_S = (uint32_t)((HEARTBEAT_INTERVAL_US / 1000000ULL) * 2);
 
 // Size of the buffer used for Home Assistant discovery messages (in bytes)
-constexpr size_t DISCOVERY_BUFFER_SIZE = 1536;
+constexpr size_t DISCOVERY_BUFFER_SIZE = 2048;
 
 // PAYLOAD
 // -------
 
 // Size of the buffer used for storing MQTT payloads (in bytes)
-constexpr size_t PAYLOAD_BUFFER_SIZE = DISCOVERY_BUFFER_SIZE + 128;
+constexpr size_t PAYLOAD_BUFFER_SIZE = DISCOVERY_BUFFER_SIZE + 256;
 
 #endif // CONFIG_H

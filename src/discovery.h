@@ -7,11 +7,13 @@
 /// @brief Values substituted into the Home Assistant discovery message
 struct DiscoveryInfo
 {
-    const char *deviceId;   // Unique identifier for the device
-    const char *deviceName; // Human-readable name of the device
-    const char *stateTopic; // MQTT topic for the device state
-    const char *firmware;   // Firmware version of the device
-    uint32_t expireAfterS;  // Time in seconds after which the discovery info expires
+    const char *deviceId;       // Unique identifier for the device
+    const char *deviceName;     // Human-readable name of the device
+    const char *stateTopic;     // MQTT topic for the device state
+    const char *firmware;       // Firmware version of the device
+    uint32_t expireAfterS;      // Time in seconds after which the discovery info expires
+    const char *cmdTopic;       // MQTT topic for the device command
+    const char *stayAwakeTopic; // MQTT topic for the stay awake command
 };
 
 /// @brief Builds the MQTT discovery topic for a given device. <prefix>/device/<deviceId>/config
