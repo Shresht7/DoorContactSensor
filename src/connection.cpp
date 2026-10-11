@@ -39,12 +39,13 @@ bool connectWiFi(const char *ssid, const char *password)
 
     // Set the WiFi mode to station (client) mode
     WiFi.mode(WIFI_STA);
+    WiFi.setHostname(DEVICE_ID);
 
     // Configure the static IP address, if provided
     // This ensures the device uses a static IP address instead of obtaining one via DHCP
     // cutting down the time it takes to negotiate a DHCP lease and improving connection reliability
 #ifdef STATIC_IP_ADDRESS
-    WiFi.config(STATIC_IP_ADDRESS);
+    WiFi.config(STATIC_IP_ADDRESS, STATIC_GATEWAY, STATIC_SUBNET, STATIC_DNS1, STATIC_DNS2);
 #endif
 
     // Initiate the WiFi connection with the provided SSID and password
