@@ -7,6 +7,7 @@
 
 #include "connection.h"
 #include "identity.h"
+#include "mqtt-topics.h"
 #include "config.h"
 #include "secrets.h"
 
@@ -126,8 +127,8 @@ bool connectMQTT(const IPAddress broker, const int port, const char *clientId, c
     // Subscribe to the command topic if the connection was successful
     if (connected)
     {
-        mqttClient.subscribe(MQTT_CMD_TOPIC);
-        Serial.println("[NET]: Subscribed to MQTT " + String(MQTT_CMD_TOPIC));
+        mqttClient.subscribe(mqttTopicCmd());
+        Serial.println("[NET]: Subscribed to MQTT " + String(mqttTopicCmd()));
     }
 
     return connected;
