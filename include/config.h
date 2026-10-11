@@ -74,11 +74,11 @@ constexpr unsigned int MQTT_SOCKET_TIMEOUT_S = 3;
 // MQTT connection timeout (in milliseconds)
 constexpr unsigned int MQTT_CONNECTION_TIMEOUT_MS = 4000;
 
-// Polling interval for checking MQTT connection status (in milliseconds)
-constexpr unsigned int MQTT_POLL_INTERVAL_MS = 20;
+// Delay between synchronous MQTT connection attempts (in milliseconds)
+constexpr unsigned int MQTT_RETRY_DELAY_MS = 20;
 
-// Space between MQTT connection attempts (in milliseconds)
-constexpr unsigned int MQTT_SPACE_MS = 20;
+// Delay after publishing to allow the network client to process the message (in milliseconds)
+constexpr unsigned int MQTT_PUBLISH_SETTLE_MS = 20;
 
 // EXPONENTIAL BACKOFF
 // -------------------

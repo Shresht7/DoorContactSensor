@@ -107,11 +107,11 @@ bool connectMQTT(const IPAddress broker, const int port, const char *clientId, c
     // Set the callback function for incoming MQTT messages
     mqttClient.setCallback(onMqttMessage);
 
-    // Attempt to connect to the MQTT broker within the specified connection timeout
+    // Retry synchronous connection attempts until connected or the time budget expires.
     while (!mqttClient.connected() && (millis() - start) < MQTT_CONNECTION_TIMEOUT_MS)
     {
         mqttClient.connect(clientId, username, password);
-        delay(MQTT_POLL_INTERVAL_MS);
+        delay(MQTT_RETRY_DELAY_MS);
     }
 
     // Record how long the MQTT connect attempt took (for telemetry)
@@ -210,7 +210,7 @@ bool publish(const char *topic, const char *payload, bool retained)
 
     // Process the MQTT client loop and allow time for the message to be sent
     mqttClient.loop();
-    delay(MQTT_SPACE_MS);
+    delay(MQTT_PUBLISH_SETTLE_MS);
 
     return ok;
 }
