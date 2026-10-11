@@ -321,8 +321,9 @@ void loop()
     // Check if the device should stop staying awake due to idle timeout
     if (stayAwake && !otaInProgress() && (millis() - lastActivityTime) > STAY_AWAKE_IDLE_TIMEOUT_MS)
     {
-        stayAwake = false;     // Stop staying awake due to idle timeout
-        stayAwakeDirty = true; // Mark the stay-awake state as dirty to trigger publishing
+        stayAwake = false;                 // Stop staying awake due to idle timeout
+        stayAwakeDirty = true;             // Mark the stay-awake state as dirty to trigger publishing
+        publish(MQTT_CMD_TOPIC, "", true); // Clear the retained command in idle auto-off so it can't rearm automatically
     }
 
     // If the stay-awake state has changed, publish the new state
