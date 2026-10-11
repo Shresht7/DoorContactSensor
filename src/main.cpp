@@ -185,6 +185,7 @@ static void onMqttMessage(const char *topic, const uint8_t *payload, unsigned in
         stayAwakeDirty = true;
         indicatorPulse(BLINK_MS);
     }
+    lastActivityTime = millis(); // Update the last activity time whenever a command is received
 
     Serial.printf("[CMD]: Stay Awake -> %s\n", newState ? "ON" : "OFF");
 }
@@ -315,6 +316,13 @@ void loop()
     else
     {
         otaStarted = false;
+    }
+
+    // Check if the device should stop staying awake due to idle timeout
+    if (stayAwake && !otaInProgress() && (millis() - lastActivityTime) > STAY_AWAKE_IDLE_TIMEOUT_MS)
+    {
+        stayAwake = false;     // Stop staying awake due to idle timeout
+        stayAwakeDirty = true; // Mark the stay-awake state as dirty to trigger publishing
     }
 
     // If the stay-awake state has changed, publish the new state

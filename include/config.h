@@ -114,6 +114,9 @@ constexpr uint64_t HEARTBEAT_INTERVAL_US = (8ULL * 60 * 60 * 1000 * 1000);
 // Maximum time the device can stay awake before forcing deep sleep (in milliseconds)
 constexpr unsigned int MAX_AWAKE_TIME_MS = 60000;
 
+// Idle timeout for staying awake (in milliseconds)
+constexpr unsigned int STAY_AWAKE_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+
 // HOME ASSISTANT DISCOVERY
 // ------------------------
 
