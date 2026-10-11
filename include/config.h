@@ -127,7 +127,7 @@ constexpr const char *DISCOVERY_PREFIX = "homeassistant";
 constexpr uint32_t DOOR_EXPIRE_AFTER_S = (uint32_t)((HEARTBEAT_INTERVAL_US / 1000000ULL) * 2);
 
 // Size of the buffer used for Home Assistant discovery messages (in bytes)
-constexpr size_t DISCOVERY_BUFFER_SIZE = 2048;
+constexpr size_t DISCOVERY_BUFFER_SIZE = 2560;
 
 // PAYLOAD
 // -------
