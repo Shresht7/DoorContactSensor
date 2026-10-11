@@ -174,8 +174,8 @@ static void onMqttMessage(const char *topic, const uint8_t *payload, unsigned in
     size_t n = (length < sizeof(value) - 1) ? length : sizeof(value) - 1;
     memcpy(value, payload, n);
 
-    bool newState = (strncmp(value, "1", 1) == 0);
-    if (newState != (bool)lastKnownState)
+    bool newState = (strncmp(value, "ON", 2) == 0 || strncmp(value, "1", 1) == 0);
+    if (newState != stayAwake)
     {
         stayAwake = newState;
         stayAwakeDirty = true;
