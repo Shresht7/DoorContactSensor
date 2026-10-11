@@ -216,8 +216,8 @@ void setup()
     // Register the MQTT message callback
     setMqttMessageCallback(onMqttMessage);
 
-#if defined(DEBUG) && !defined(STAY_AWAKE)
-    // give the host time to reattach to the USB port
+#ifdef WAIT_FOR_USB
+    // Give the host time to reattach to the USB port.
     delay(USB_REATTACH_GRACE_MS);
 #endif
 
