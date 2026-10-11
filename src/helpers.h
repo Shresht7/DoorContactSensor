@@ -12,10 +12,22 @@
 /// @return The calculated backoff time in microseconds
 inline uint64_t exponentialBackoff(uint64_t base, unsigned int attempt, uint64_t cap = EXPONENTIAL_BACKOFF_CAP)
 {
-    uint64_t result = base;               // Initialize the result with the base delay time
-    while (attempt-- > 0 && result < cap) // Continue doubling until attempts are exhausted or cap is reached
-        result <<= 1;                     // Double the result for exponential backoff
-    return result > cap ? cap : result;   // Ensure the result does not exceed the cap
+    // If the base delay is already greater than or equal to the cap, return the cap immediately
+    if (base >= cap)
+        return cap;
+
+    // Initialize the result with the base delay time
+    uint64_t result = base;
+
+    // Double the result for each attempt until the cap is reached
+    while (attempt-- > 0)
+    {
+        if (result > cap / 2)
+            return cap;
+        result <<= 1; // Double the result for exponential backoff
+    }
+
+    return result;
 }
 
 enum WakeReason
