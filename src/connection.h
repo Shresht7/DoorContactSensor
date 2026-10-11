@@ -18,6 +18,12 @@ bool isWiFiConnected();
 /// @return True if the connection is successful, false otherwise
 bool connectWiFi(const char *ssid, const char *password);
 
+/// @brief Gets the duration of the most recent WiFi connect attempt in ms
+uint32_t getLastWiFiConnectMs();
+
+/// @brief Gets the duration of the most recent MQTT connect attempt in ms
+uint32_t getLastMQTTConnectMs();
+
 /// @brief Gets the Received Signal Strength Indicator (RSSI) of the current WiFi connection
 /// @return The RSSI value in dBm, or 0 if not connected
 int getRSSI();
@@ -34,6 +40,22 @@ bool connectMQTT(const char *broker, int port, const char *clientId, const char 
 /// @brief Connects to the WiFi network and MQTT broker
 /// @return True if both WiFi and MQTT connections are successful, false otherwise
 bool connectNetwork();
+
+// SUBSCRIBE
+// ---------
+
+/// @brief Handler for incoming MQTT messages (routed from the client loop)
+typedef void (*MqttMessageCallback)(const char *topic, const uint8_t *payload, unsigned int length);
+
+/// @brief Registers the handler for subscribed MQTT messages
+/// @param callback The callback function to handle incoming MQTT messages
+void setMqttMessageCallback(MqttMessageCallback callback);
+
+/// @brief Callback function invoked when an MQTT message is received
+/// @param topic The topic of the received message
+/// @param payload The payload of the received message
+/// @param length The length of the payload
+void onMqttMessage(char *topic, uint8_t *payload, unsigned int length);
 
 // PUBLISH
 // -------
