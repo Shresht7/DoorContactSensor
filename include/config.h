@@ -14,9 +14,6 @@
 // The human-readable name of the device
 constexpr const char *DEVICE_NAME = "Door Contact Sensor";
 
-// The unique identifier for the device
-constexpr const char *DEVICE_ID = "door-contact-sensor-prototype";
-
 // FIRMWARE
 // --------
 
@@ -71,8 +68,8 @@ constexpr unsigned int WIFI_POLL_INTERVAL_MS = 20;
 // MQTT client ID for connecting to the broker
 constexpr const char *MQTT_CLIENT_ID = "door-sensor-client-01";
 
-// MQTT topic for publishing the door sensor state
-constexpr const char *MQTT_TOPIC = "door-sensor/state";
+// Base namespace for device-specific MQTT topics
+constexpr const char *MQTT_BASE_TOPIC = "door-contact-sensor";
 
 // MQTT socket timeout (in seconds)
 constexpr unsigned int MQTT_SOCKET_TIMEOUT_S = 3;
@@ -102,10 +99,6 @@ constexpr uint64_t RETRY_BASE_US = (60ULL * 1000 * 1000);
 #ifndef STAY_AWAKE_INITIAL
 #define STAY_AWAKE_INITIAL 0
 #endif
-
-// MQTT topics for stay-awake switch
-constexpr const char *MQTT_CMD_TOPIC = "door-sensor/cmd";
-constexpr const char *MQTT_STAY_AWAKE_TOPIC = "door-sensor/stay-awake";
 
 // Wake this often even if the door hasn't moved, and publish the current state,
 // so Home Assistant can tell "closed and fine" apart from "dead battery"
