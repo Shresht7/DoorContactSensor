@@ -8,6 +8,7 @@
 #include "connection.h"
 #include "payload.h"
 #include "deepsleep.h"
+#include "identity.h"
 #include "discovery.h"
 #include "ota.h"
 #include "indicator.h"
@@ -203,6 +204,10 @@ void setup()
     // Initialize serial communication
     Serial.begin(BAUD_RATE);
     Serial.println("[BOOT]: Starting up...");
+
+    // Initialize the device identity module
+    identityBegin();
+    Serial.printf("[BOOT]: Device ID: %s\n", deviceId());
 
     // Register the MQTT message callback
     setMqttMessageCallback(onMqttMessage);
