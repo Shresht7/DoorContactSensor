@@ -41,6 +41,10 @@ bool connectWiFi(const char *ssid, const char *password)
     WiFi.mode(WIFI_STA);
     WiFi.setHostname(DEVICE_ID);
 
+    // Disable WiFi power saver mode. This should speed up MQTT connections.
+    // WiFi is shut down when the device goes to sleep anyway.
+    WiFi.setSleep(false);
+
     // Configure the static IP address, if provided
     // This ensures the device uses a static IP address instead of obtaining one via DHCP
     // cutting down the time it takes to negotiate a DHCP lease and improving connection reliability
