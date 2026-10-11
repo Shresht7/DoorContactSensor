@@ -3,9 +3,7 @@
 
 #include <stdint.h>
 #include "esp_sleep.h"
-
-// Maximum allowed delay time for exponential backoff in microseconds (default: 8 hours)
-constexpr uint64_t EXPONENTIAL_BACKOFF_CAP = (8ULL * 60 * 60 * 1000 * 1000);
+#include "config.h"
 
 /// @brief Calculates the exponential backoff time based on the number of attempts
 /// @param base The base delay time in microseconds

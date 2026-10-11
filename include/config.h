@@ -85,8 +85,11 @@ constexpr unsigned int MQTT_PUBLISH_SETTLE_MS = 20;
 
 // First retry after 60 seconds (in microseconds)
 // This value is used as the base delay before retrying a failed operation
-// Subsequent retries use exponential backoff based on this base delay
+// Subsequent retries use exponential backoff based on this base delay. (caps at EXPONENTIAL_BACKOFF_CAP = 8h)
 constexpr uint64_t RETRY_BASE_US = (60ULL * 1000 * 1000);
+
+// Maximum allowed delay time for exponential backoff in microseconds (default: 8 hours)
+constexpr uint64_t EXPONENTIAL_BACKOFF_CAP = (8ULL * 60 * 60 * 1000 * 1000);
 
 // DEEP SLEEP
 // ----------
