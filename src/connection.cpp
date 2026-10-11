@@ -6,6 +6,8 @@
 #include <PubSubClient.h>
 
 #include "connection.h"
+#include "identity.h"
+#include "mqtt-topics.h"
 #include "config.h"
 #include "secrets.h"
 
@@ -39,7 +41,7 @@ bool connectWiFi(const char *ssid, const char *password)
 
     // Set the WiFi mode to station (client) mode
     WiFi.mode(WIFI_STA);
-    WiFi.setHostname(DEVICE_ID);
+    WiFi.setHostname(deviceId());
 
     // Disable WiFi power saver mode. This should speed up MQTT connections.
     // WiFi is shut down when the device goes to sleep anyway.
@@ -125,8 +127,8 @@ bool connectMQTT(const IPAddress broker, const int port, const char *clientId, c
     // Subscribe to the command topic if the connection was successful
     if (connected)
     {
-        mqttClient.subscribe(MQTT_CMD_TOPIC);
-        Serial.println("[NET]: Subscribed to MQTT " + String(MQTT_CMD_TOPIC));
+        mqttClient.subscribe(mqttTopicCmd());
+        Serial.println("[NET]: Subscribed to MQTT " + String(mqttTopicCmd()));
     }
 
     return connected;
@@ -165,7 +167,7 @@ bool connectNetwork()
     }
 
     // Attempt to connect to MQTT broker
-    if (!connectMQTT(MQTT_BROKER, MQTT_PORT, MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD))
+    if (!connectMQTT(MQTT_BROKER, MQTT_PORT, deviceId(), MQTT_USERNAME, MQTT_PASSWORD))
         return false;
 
     return true;

@@ -8,7 +8,9 @@
 #include "connection.h"
 #include "payload.h"
 #include "deepsleep.h"
+#include "identity.h"
 #include "discovery.h"
+#include "mqtt-topics.h"
 #include "ota.h"
 #include "indicator.h"
 #include "helpers.h"
@@ -76,7 +78,7 @@ bool publishState(bool doorOpened)
     }
 
     // Attempt to publish the state to the MQTT broker
-    bool ok = publish(MQTT_TOPIC, payload, true);
+    bool ok = publish(mqttTopicState(), payload, true);
     if (ok)
     {
         lastPublishedState = doorOpened;
@@ -145,15 +147,15 @@ static void publishDiscovery()
     char payload[PAYLOAD_BUFFER_SIZE];
 
     DiscoveryInfo info = {
-        DEVICE_ID,
+        deviceId(),
         DEVICE_NAME,
-        MQTT_TOPIC,
+        mqttTopicState(),
         FIRMWARE_VERSION,
         DOOR_EXPIRE_AFTER_S,
-        MQTT_CMD_TOPIC,
-        MQTT_STAY_AWAKE_TOPIC};
+        mqttTopicCmd(),
+        mqttTopicStayAwake()};
 
-    if (buildDiscoveryTopic(topic, sizeof(topic), DISCOVERY_PREFIX, DEVICE_ID) == 0)
+    if (buildDiscoveryTopic(topic, sizeof(topic), DISCOVERY_PREFIX, deviceId()) == 0)
     {
         Serial.println("[DISCOVERY]: Failed to construct Discovery Topic");
         return;
@@ -172,7 +174,7 @@ static void publishDiscovery()
 
 static void onMqttMessage(const char *topic, const uint8_t *payload, unsigned int length)
 {
-    if (strncmp(topic, MQTT_CMD_TOPIC, strlen(MQTT_CMD_TOPIC)) != 0)
+    if (strcmp(topic, mqttTopicCmd()) != 0)
         return;
     char value[4] = {0};
     size_t n = (length < sizeof(value) - 1) ? length : sizeof(value) - 1;
@@ -203,6 +205,13 @@ void setup()
     // Initialize serial communication
     Serial.begin(BAUD_RATE);
     Serial.println("[BOOT]: Starting up...");
+
+    // Initialize the device identity module
+    identityBegin();
+    Serial.printf("[BOOT]: Device ID: %s\n", deviceId());
+
+    // Initialize the MQTT topics
+    mqttTopicsInit();
 
     // Register the MQTT message callback
     setMqttMessageCallback(onMqttMessage);
@@ -250,8 +259,8 @@ void setup()
         }
         if (stayAwakeDirty)
         {
-            stayAwakeDirty = false;                                         // Clear the dirty flag after handling it
-            publish(MQTT_STAY_AWAKE_TOPIC, stayAwake ? "ON" : "OFF", true); // Publish the updated stay-awake state
+            stayAwakeDirty = false;                                        // Clear the dirty flag after handling it
+            publish(mqttTopicStayAwake(), stayAwake ? "ON" : "OFF", true); // Publish the updated stay-awake state
         }
     }
     else if (wakeCause == ESP_SLEEP_WAKEUP_TIMER)
@@ -262,7 +271,7 @@ void setup()
         if (online)
         {
             publishDiscovery();
-            publish(MQTT_STAY_AWAKE_TOPIC, stayAwake ? "ON" : "OFF", true);
+            publish(mqttTopicStayAwake(), stayAwake ? "ON" : "OFF", true);
         }
         ok = online && reportState(doorOpened); // Report current state of door
     }
@@ -274,7 +283,7 @@ void setup()
         if (online)
         {
             publishDiscovery();
-            publish(MQTT_STAY_AWAKE_TOPIC, stayAwake ? "ON" : "OFF", true);
+            publish(mqttTopicStayAwake(), stayAwake ? "ON" : "OFF", true);
         }
         ok = online && reportState(doorOpened); // Report current state of door
     }
@@ -318,7 +327,7 @@ void loop()
     if (stayAwakeDirty)
     {
         stayAwakeDirty = false;
-        publish(MQTT_STAY_AWAKE_TOPIC, stayAwake ? "ON" : "OFF", true);
+        publish(mqttTopicStayAwake(), stayAwake ? "ON" : "OFF", true);
     }
 
     // Serve OTA requests while awake and connected
@@ -341,7 +350,7 @@ void loop()
     {
         stayAwake = false;                 // Stop staying awake due to idle timeout
         stayAwakeDirty = true;             // Mark the stay-awake state as dirty to trigger publishing
-        publish(MQTT_CMD_TOPIC, "", true); // Clear the retained command in idle auto-off so it can't rearm automatically
+        publish(mqttTopicCmd(), "", true); // Clear the retained command in idle auto-off so it can't rearm automatically
     }
 
     // Check if the door has been in a steady state for long enough to go to sleep

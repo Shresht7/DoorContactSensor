@@ -1,6 +1,7 @@
 #include <ArduinoOTA.h>
 
 #include "ota.h"
+#include "identity.h"
 #include "config.h"
 #include "secrets.h"
 
@@ -10,7 +11,7 @@ static bool otaActive = false;
 void otaBegin()
 {
     // Initialize the ArduinoOTA library with the device hostname, port, and password
-    ArduinoOTA.setHostname(DEVICE_ID);
+    ArduinoOTA.setHostname(deviceId());
     ArduinoOTA.setPort(OTA_PORT);
 #ifdef OTA_PASSWORD
     ArduinoOTA.setPassword(OTA_PASSWORD);
