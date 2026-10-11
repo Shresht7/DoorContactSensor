@@ -45,16 +45,16 @@ constexpr uint8_t PIN_LED = 8;             // LED pin
 constexpr bool LED_ACTIVE_HIGH = false;
 
 // Duration of the LED blink (in milliseconds)
-constexpr unsigned int BLINK_MS = 250;
+constexpr unsigned int BLINK_MS = 50;
 
 // STABILITY TIMINGS
 // -----------------
 
 // Minimum time the door state must remain unchanged before considering it stable
-constexpr unsigned int DOOR_STABILITY_TIME_MS = 50;
+constexpr unsigned int DOOR_STABILITY_TIME_MS = 20;
 
 // Minimum time the door state must remain steady before considering deep sleep
-constexpr unsigned int DOOR_SETTLE_TIME_MS = 500;
+constexpr unsigned int DOOR_SETTLE_TIME_MS = 200;
 
 // WIFI
 // ----
@@ -63,7 +63,7 @@ constexpr unsigned int DOOR_SETTLE_TIME_MS = 500;
 constexpr unsigned int WIFI_CONNECT_TIMEOUT_MS = 4000;
 
 // Polling interval for checking WiFi connection status (in milliseconds)
-constexpr unsigned int WIFI_POLL_INTERVAL_MS = 100;
+constexpr unsigned int WIFI_POLL_INTERVAL_MS = 20;
 
 // MQTT
 // ----
@@ -81,10 +81,10 @@ constexpr unsigned int MQTT_SOCKET_TIMEOUT_S = 3;
 constexpr unsigned int MQTT_CONNECTION_TIMEOUT_MS = 4000;
 
 // Polling interval for checking MQTT connection status (in milliseconds)
-constexpr unsigned int MQTT_POLL_INTERVAL_MS = 100;
+constexpr unsigned int MQTT_POLL_INTERVAL_MS = 20;
 
 // Space between MQTT connection attempts (in milliseconds)
-constexpr unsigned int MQTT_SPACE_MS = 100;
+constexpr unsigned int MQTT_SPACE_MS = 20;
 
 // EXPONENTIAL BACKOFF
 // -------------------
