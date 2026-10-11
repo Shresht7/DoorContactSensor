@@ -9,13 +9,16 @@ size_t buildStatusReportPayload(char *buffer, size_t size, const StatusReport &r
     int n = snprintf(
         buffer,
         size,
-        "{\"state\":\"%s\",\"rssi\":%d,\"wake\":\"%s\",\"wake_count\":%lu,\"failed\":%u,\"awake_ms\":%lu,\"fw\":\"%s\"}",
+        "{\"state\":\"%s\",\"rssi\":%d,\"wake\":\"%s\",\"wake_count\":%lu,\"failed\":%u,\"awake_ms\":%lu,\"wifi_ms\":%lu,\"mqtt_ms\":%lu,\"report_ms\":%lu,\"fw\":\"%s\"}",
         r.doorClosed ? "CLOSED" : "OPEN",
         r.rssi,
         r.wakeReason,
         (unsigned long)r.wakeCount,
         (unsigned)r.failedPublishes,
         (unsigned long)r.awakeMs,
+        (unsigned long)r.wifiMs,
+        (unsigned long)r.mqttMs,
+        (unsigned long)r.reportMs,
         r.firmwareVersion);
 
     // snprintf returns the length it *wanted* to write, so n >= size means truncation

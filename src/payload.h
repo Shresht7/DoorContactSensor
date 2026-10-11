@@ -14,6 +14,9 @@ struct StatusReport
     uint32_t wakeCount;          // Number of wakes since power up
     uint8_t failedPublishes;     // Consecutive failed MQTT publish attempts since last successful publish
     uint32_t awakeMs;            // Time the device has been awake since the last wake-up (in milliseconds)
+    uint32_t wifiMs;             // Duration of the most recent WiFi connect attempt (ms)
+    uint32_t mqttMs;             // Duration of the most recent MQTT connect attempt (ms)
+    uint32_t reportMs;           // Duration from boot to publishing this report (ms)
     const char *firmwareVersion; // Current firmware version of the device
 };
 
