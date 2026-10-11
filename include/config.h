@@ -65,9 +65,6 @@ constexpr unsigned int WIFI_POLL_INTERVAL_MS = 20;
 // MQTT
 // ----
 
-// MQTT client ID for connecting to the broker
-constexpr const char *MQTT_CLIENT_ID = "door-sensor-client-01";
-
 // Base namespace for device-specific MQTT topics
 constexpr const char *MQTT_BASE_TOPIC = "door-contact-sensor";
 
