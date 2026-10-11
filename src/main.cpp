@@ -28,7 +28,7 @@ RTC_DATA_ATTR uint8_t failedPublishes = 0;
 
 // Stay awake instead of deep sleeping. Preseeded from env default;
 // survives deep sleep; resets on power cycle; toggleable via MQTT
-RTC_DATA_ATTR bool stayAwake = STAY_AWAKE_INITIAL;
+RTC_DATA_ATTR bool stayAwake = STAY_AWAKE_ON_BOOT;
 
 // Set when stayAwake changed this wake cycle, so loop() can publish the switch state
 static bool stayAwakeDirty = false;

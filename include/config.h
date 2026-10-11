@@ -94,10 +94,10 @@ constexpr uint64_t EXPONENTIAL_BACKOFF_CAP = (8ULL * 60 * 60 * 1000 * 1000);
 // DEEP SLEEP
 // ----------
 
-// Initial value of the stay-awake flag. Set to 1 via build flag (dev env);
-// 0 lets RTC_DATA_ATTR preseed on normal boots;
-#ifndef STAY_AWAKE_INITIAL
-#define STAY_AWAKE_INITIAL 0
+// Initial stay-awake state on a power-on reset
+// RTC_DATA_ATTR preserves later changes across deep sleep
+#ifndef STAY_AWAKE_ON_BOOT
+#define STAY_AWAKE_ON_BOOT 0
 #endif
 
 // Wake this often even if the door hasn't moved, and publish the current state,
