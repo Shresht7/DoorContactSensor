@@ -48,7 +48,7 @@ constexpr unsigned int BLINK_MS = 50;
 // -----------------
 
 // Minimum time the door state must remain unchanged before considering it stable
-constexpr unsigned int DOOR_STABILITY_TIME_MS = 20;
+constexpr unsigned int DOOR_STABILITY_TIME_MS = 50;
 
 // Minimum time the door state must remain steady before considering deep sleep
 constexpr unsigned int DOOR_SETTLE_TIME_MS = 200;
