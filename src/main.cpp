@@ -41,7 +41,7 @@ unsigned long lastActivityTime = 0;
 static bool otaStarted = false;
 
 // Why the device woke up this cycle
-static WakeReason wakeReason = WakeReason::WAKE_REASON_BOOT;
+static WakeReason wakeReason = WakeReason::Boot;
 
 /// @brief Publishes the current state of the door to the MQTT broker
 /// @param doorOpened True if the door is opened, false if closed

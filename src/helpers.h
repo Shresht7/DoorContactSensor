@@ -2,7 +2,6 @@
 #define HELPERS_H
 
 #include <stdint.h>
-#include "esp_sleep.h"
 #include "config.h"
 
 /// @brief Calculates the exponential backoff time based on the number of attempts
@@ -28,39 +27,6 @@ inline uint64_t exponentialBackoff(uint64_t base, unsigned int attempt, uint64_t
     }
 
     return result;
-}
-
-enum WakeReason
-{
-    WAKE_REASON_DOOR,
-    WAKE_REASON_TIMER,
-    WAKE_REASON_BOOT
-};
-
-inline const char *WakeReasonToString(WakeReason reason)
-{
-    switch (reason)
-    {
-    case WAKE_REASON_DOOR:
-        return "door";
-    case WAKE_REASON_TIMER:
-        return "timer";
-    default:
-        return "boot";
-    }
-}
-
-static WakeReason wakeReasonFromCause(esp_sleep_wakeup_cause_t cause)
-{
-    switch (cause)
-    {
-    case ESP_SLEEP_WAKEUP_GPIO:
-        return WAKE_REASON_DOOR;
-    case ESP_SLEEP_WAKEUP_TIMER:
-        return WAKE_REASON_TIMER;
-    default:
-        return WAKE_REASON_BOOT;
-    }
 }
 
 #endif // HELPERS_H
