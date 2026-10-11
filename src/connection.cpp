@@ -84,7 +84,7 @@ int getRSSI()
 // CONNECT MQTT
 // ------------
 
-bool connectMQTT(const char *broker, int port, const char *clientId, const char *username, const char *password)
+bool connectMQTT(const IPAddress broker, const int port, const char *clientId, const char *username, const char *password)
 {
     Serial.println("[NET]: Connecting to MQTT broker...");
     unsigned long start = millis();
