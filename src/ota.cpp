@@ -28,7 +28,7 @@ void otaBegin()
     Serial.println("[OTA]: Service Started");
 }
 
-void otaLoop()
+void otaUpdate()
 {
     ArduinoOTA.handle();
 }

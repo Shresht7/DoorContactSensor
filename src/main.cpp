@@ -9,6 +9,7 @@
 #include "payload.h"
 #include "deepsleep.h"
 #include "discovery.h"
+#include "ota.h"
 #include "indicator.h"
 #include "helpers.h"
 #include "config.h"
@@ -33,6 +34,9 @@ static bool stayAwakeDirty = false;
 bool lastDoorState;
 int lastPublishedState = -1;
 unsigned long lastActivityTime = 0;
+
+/// @brief Indicates whether the OTA (Over-the-Air) update service has been started
+static bool otaStarted = false;
 
 // Why the device woke up this cycle
 static WakeReason wakeReason = WakeReason::WAKE_REASON_BOOT;
@@ -100,8 +104,8 @@ bool reportState(bool doorOpened)
 /// @param currentlyOpen True if the door is currently open, false if closed
 void goToSleep(bool currentlyOpen)
 {
-    // Return early if the device is set to stay awake
-    if (stayAwake)
+    // Return early if the device is set to stay awake or an OTA update is in progress
+    if (stayAwake || otaInProgress())
         return;
 
     // Turn off the indicator LED before going to deep sleep
@@ -297,6 +301,21 @@ void loop()
 
     // Allow the network client to process any pending messages
     networkLoop();
+
+    // Serve OTA requests while awake and connected
+    if (isWiFiConnected())
+    {
+        if (!otaStarted)
+        {
+            otaBegin();
+            otaStarted = true;
+        }
+        otaUpdate();
+    }
+    else
+    {
+        otaStarted = false;
+    }
 
     // If the stay-awake state has changed, publish the new state
     if (stayAwakeDirty)
