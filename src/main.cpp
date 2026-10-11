@@ -242,6 +242,17 @@ void setup()
         // Woke up from external wakeup (door sensor)
         Serial.println("[WAKE]: Woke up from external wakeup (door sensor)");
         ok = reportState(doorOpened); // Report current state of door
+        networkLoop();                // Process any retained command delivered on connect
+        if (stayAwake)
+        {
+            stayAwakeDirty = true;       // Mark the stay-awake state as dirty to trigger publishing
+            lastActivityTime = millis(); // Update the last activity time to now
+        }
+        if (stayAwakeDirty)
+        {
+            stayAwakeDirty = false;                                         // Clear the dirty flag after handling it
+            publish(MQTT_STAY_AWAKE_TOPIC, stayAwake ? "ON" : "OFF", true); // Publish the updated stay-awake state
+        }
     }
     else if (wakeCause == ESP_SLEEP_WAKEUP_TIMER)
     {
@@ -303,6 +314,13 @@ void loop()
     // Allow the network client to process any pending messages
     networkLoop();
 
+    // If the stay-awake state has changed, publish the new state
+    if (stayAwakeDirty)
+    {
+        stayAwakeDirty = false;
+        publish(MQTT_STAY_AWAKE_TOPIC, stayAwake ? "ON" : "OFF", true);
+    }
+
     // Serve OTA requests while awake and connected
     if (isWiFiConnected())
     {
@@ -326,19 +344,12 @@ void loop()
         publish(MQTT_CMD_TOPIC, "", true); // Clear the retained command in idle auto-off so it can't rearm automatically
     }
 
-    // If the stay-awake state has changed, publish the new state
-    if (stayAwakeDirty)
-    {
-        stayAwakeDirty = false;
-        publish(MQTT_STAY_AWAKE_TOPIC, stayAwake ? "ON" : "OFF", true);
-    }
-
     // Check if the door has been in a steady state for long enough to go to sleep
-    if ((millis() - lastActivityTime) > DOOR_SETTLE_TIME_MS && doorOpened == lastPublishedState)
+    if (!stayAwake && (millis() - lastActivityTime) > DOOR_SETTLE_TIME_MS && doorOpened == lastPublishedState)
         goToSleep(doorOpened);
 
     // Force deep sleep if the device has been awake for too long
-    if (millis() > MAX_AWAKE_TIME_MS)
+    if (!stayAwake && millis() > MAX_AWAKE_TIME_MS)
         goToSleep(doorOpened);
 
     // Throttle the loop to avoid busy-waiting
